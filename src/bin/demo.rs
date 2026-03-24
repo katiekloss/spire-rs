@@ -1,6 +1,11 @@
-use spire_rs::Game;
+use spire_rs::Run;
 
 fn main() {
-    let game = Game{};
-    println!("Hello, world!");
+    let run = Run {
+        floor: 0
+    };
+    
+    loop {
+
+    }
 }
