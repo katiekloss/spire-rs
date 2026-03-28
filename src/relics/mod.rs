@@ -1,5 +1,6 @@
 use crate::Relic;
 
+#[derive(PartialEq)]
 pub enum Relics {
     RingOfTheSnake
 }

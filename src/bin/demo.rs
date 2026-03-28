@@ -1,19 +1,25 @@
-use spire_rs::{Run, cards::{Card, CardInstance}, monsters::FuzzyWurmCrawler, services::EncounterManager};
+use spire_rs::{Run, cards::{Card, CardInstance}, monsters::FuzzyWurmCrawler, encounters::Encounter};
 
 fn main() {
     let mut run = Run {
         floor: 0,
         relics: vec![],
         health: 70,
-        gold: 99
+        gold: 99,
+        deck: vec![]
     };
+
+    for _ in 0..5 {
+        run.deck.push(CardInstance::new(Card::SilentStrike));
+        run.deck.push(CardInstance::new(Card::SilentDefend));
+    }
+    run.deck.push(CardInstance::new(Card::Survivor));
+    run.deck.push(CardInstance::new(Card::Neutralize));
 
     run.relics.push(spire_rs::relics::Relics::RingOfTheSnake);
 
-    let mut encounter = EncounterManager::new(&run);
+    let mut encounter = Encounter::new(&run);
     encounter.enemies.push(Box::new(FuzzyWurmCrawler{}));
-
-    assert_eq!(encounter.turn, 1);
 
     {
         encounter.begin_turn();

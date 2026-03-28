@@ -1,18 +1,17 @@
-use crate::relics::Relics;
+
+use crate::{cards::CardInstance, relics::Relics};
 
 pub mod cards;
 pub mod relics;
 pub mod monsters;
-pub mod services;
+pub mod encounters;
 
 pub struct Run {
     pub floor: u32,
     pub relics: Vec<Relics>,
     pub health: u32,
-    pub gold: u32
-}
-
-pub struct EncounterState {
+    pub gold: u32,
+    pub deck: Vec<CardInstance>,
 }
 
 pub enum EncounterOutcome {
@@ -30,4 +29,14 @@ pub trait Effect {
 
 pub trait Relic {
 
+}
+
+pub enum Keywords {
+    Eternal,
+    Ethereal,
+    Exhaust,
+    Innate,
+    Retain,
+    Sly,
+    Unplayable
 }
