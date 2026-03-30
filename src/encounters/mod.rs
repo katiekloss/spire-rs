@@ -92,7 +92,7 @@ impl<'a> Encounter<'a> {
 
         self.energy -= card.cost;
 
-        if let Some(Keywords::Exhaust) = card.keywords {
+        if card.keywords.contains(&Keywords::Exhaust) {
             self.exhaust_pile.push(card);
         } else {
             self.discard_pile.push(card);

@@ -32,7 +32,7 @@ pub struct CardInstance {
     pub card: Card,
     pub cost: u32,
     // secondary_cost: u8 // regent
-    pub keywords: Option<Keywords>
+    pub keywords: Vec<Keywords>
 }
 
 impl CardInstance {
@@ -41,7 +41,7 @@ impl CardInstance {
             id: *CARD_IDS.lock().unwrap(),
             cost: CARDS[&card].cost,
             card,
-            keywords: None
+            keywords: vec![]
         }
     }
 }
