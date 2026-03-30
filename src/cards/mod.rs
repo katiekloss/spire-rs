@@ -38,7 +38,7 @@ pub struct CardInstance {
 impl CardInstance {
     pub fn new(card: Card) -> Self {
         Self {
-            id: *CARD_IDS.lock().unwrap(),
+            id: { let mut i = CARD_IDS.lock().unwrap(); *i += 1; *i },
             cost: CARDS[&card].cost,
             card,
             keywords: vec![]
