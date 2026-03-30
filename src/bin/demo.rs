@@ -37,7 +37,9 @@ fn main() {
             panic!(); // lol uh oh
         };
 
-        encounter.play(card);
+        // mentioned elsewhere: this is gross, I need a more elegant solution to the borrow problem than this
+        encounter.play_by_id(card.id);
+
         assert_eq!(encounter.hand.len(), 6);
         assert_eq!(encounter.energy, 2);
         assert_eq!(encounter.block, 5);

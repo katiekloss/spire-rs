@@ -1,4 +1,6 @@
-use std::{collections::HashMap, sync::LazyLock};
+use std::{collections::HashMap, sync::{LazyLock, Mutex}};
+
+use crate::Keywords;
 
 static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
     let mut m = HashMap::new();
@@ -9,6 +11,8 @@ static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
     m
 });
 
+static CARD_IDS: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(0));
+
 #[derive(Eq, PartialEq, Hash, Clone)]
 pub enum Card {
     SilentStrike,
@@ -18,22 +22,26 @@ pub enum Card {
 }
 
 pub struct CardData {
-    pub cost: u8,
+    pub cost: u32,
     // secondary_cost: u8 // regent
 }
 
 #[derive(Clone)]
 pub struct CardInstance {
+    pub id: u32, // TODO: this is gross ew yucky (but avoids the borrow checker)
     pub card: Card,
-    pub cost: u8,
+    pub cost: u32,
     // secondary_cost: u8 // regent
+    pub keywords: Option<Keywords>
 }
 
 impl CardInstance {
     pub fn new(card: Card) -> Self {
         Self {
+            id: *CARD_IDS.lock().unwrap(),
             cost: CARDS[&card].cost,
-            card
+            card,
+            keywords: None
         }
     }
 }

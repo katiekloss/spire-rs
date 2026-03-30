@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use rand::seq::SliceRandom;
 
-use crate::{Effect, Run, cards::CardInstance, monsters::Monster, relics::Relics};
+use crate::{Effect, Keywords, Run, cards::CardInstance, monsters::Monster, relics::Relics};
 
 pub struct Encounter<'a> {
     pub run: &'a Run,
@@ -78,8 +78,25 @@ impl<'a> Encounter<'a> {
         }
     }
 
-    pub fn play(&self, _card: &CardInstance) {
+    pub fn play_by_id(&mut self, card: u32) {
+        let i = 'get: {
+            for i in 0..self.hand.len() {
+                if self.hand[i].id == card {
+                    break 'get i;
+                }
+            }
+            panic!("Can't find card");
+        };
 
+        let card = self.hand.swap_remove(i);
+
+        self.energy -= card.cost;
+
+        if let Some(Keywords::Exhaust) = card.keywords {
+            self.exhaust_pile.push(card);
+        } else {
+            self.discard_pile.push(card);
+        }
     }
 
     #[inline]

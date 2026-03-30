@@ -31,6 +31,7 @@ pub trait Relic {
 
 }
 
+#[derive(Clone)]
 pub enum Keywords {
     Eternal,
     Ethereal,
