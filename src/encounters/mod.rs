@@ -72,6 +72,7 @@ impl<'a> Encounter<'a> {
 
     pub fn end_turn(&mut self) {
         self.turn += 1;
+        self.energy = 3;
 
         while let Some(card) = self.hand.pop() {
             self.discard_pile.push(card);
@@ -88,9 +89,11 @@ impl<'a> Encounter<'a> {
             panic!("Can't find card");
         };
 
-        let card = self.hand.swap_remove(i);
+        let mut card = self.hand.swap_remove(i);
 
         self.energy -= card.cost;
+
+        card.play(self);
 
         if card.keywords.contains(&Keywords::Exhaust) {
             self.exhaust_pile.push(card);

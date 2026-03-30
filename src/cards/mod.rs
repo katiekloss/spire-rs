@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::{LazyLock, Mutex}};
 
-use crate::Keywords;
+use crate::{Keywords, encounters::Encounter};
 
 static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
     let mut m = HashMap::new();
@@ -42,6 +42,15 @@ impl CardInstance {
             cost: CARDS[&card].cost,
             card,
             keywords: vec![]
+        }
+    }
+
+    pub fn play(&mut self, encounter: &mut Encounter) {
+        match self.card {
+            Card::SilentDefend => {
+                encounter.block += 5;
+            },
+            _ => {}
         }
     }
 }
