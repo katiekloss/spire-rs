@@ -27,7 +27,7 @@ fn main() {
         println!("Turn {}: {:?}", encounter.turn, encounter.hand);
 
         assert_eq!(encounter.hand.len(), 7); // ring of the snake
-        assert_eq!(encounter.energy, 3);
+        assert_eq!(encounter.player.energy, 3);
 
         // macro this
         let card: &CardInstance = 'get: {
@@ -45,10 +45,11 @@ fn main() {
         encounter.play_by_id(card.id);
 
         assert_eq!(encounter.hand.len(), 6);
-        assert_eq!(encounter.energy, 2);
-        assert_eq!(encounter.block, 5);
+        assert_eq!(encounter.player.energy, 2);
+        assert_eq!(encounter.player.block, 5);
 
         encounter.end_turn();
+        encounter.commit_turn();
     }
 
     {
@@ -57,7 +58,7 @@ fn main() {
 
         println!("Turn {}: {:?}", encounter.turn, encounter.hand);
         assert_eq!(encounter.hand.len(), 5); // no more ring of the snake
-        assert_eq!(encounter.energy, 3);
+        assert_eq!(encounter.player.energy, 3);
 
         let card: &CardInstance = 'get: {
             for card in &encounter.hand {
@@ -81,12 +82,15 @@ fn main() {
             panic!();
         };
 
-        encounter.play_by_id_with_target(card.id, encounter.enemies[0].id);
-
-        assert_eq!(encounter.block, 5);
-        assert_eq!(encounter.energy, 1);
+        encounter.play_by_id(card.id);
+        assert_eq!(encounter.player.block, 5);
+        assert_eq!(encounter.player.energy, 1);
         assert_eq!(encounter.enemies[0].health, 49);
 
         encounter.end_turn();
+        assert_eq!(encounter.player.block, 1);
+        assert_eq!(encounter.player.health, 70);
+
+        encounter.commit_turn();
     }
 }

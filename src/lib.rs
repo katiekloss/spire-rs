@@ -1,4 +1,6 @@
 
+use std::fmt::Display;
+
 use crate::{cards::CardInstance, relics::Relics};
 
 pub mod cards;
@@ -19,12 +21,20 @@ pub enum EncounterOutcome {
     Dead
 }
 
+#[derive(Clone)]
 pub enum Effect {
     Strength(u32)
 }
 
 pub trait Relic {
 
+}
+
+pub trait Damageable {
+    fn get_block(&self) -> u32;
+    fn get_health(&self) -> u32;
+    fn set_block(&mut self, block: u32);
+    fn set_health(&mut self, health: u32);
 }
 
 #[derive(Clone, PartialEq)]

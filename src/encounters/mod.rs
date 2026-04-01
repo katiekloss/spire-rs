@@ -2,13 +2,18 @@ use std::cmp::min;
 
 use rand::seq::SliceRandom;
 
-use crate::{Effect, Keywords, Run, cards::{CardInstance, PlayResult}, monsters::Enemy, relics::Relics};
+use crate::{Damageable, Effect, Keywords, Run, cards::{CardInstance, PlayResult}, monsters::{Enemy, Moves}, relics::Relics};
+
+pub struct Player {
+    pub energy: u32,
+    pub block: u32,
+    pub health: u32,
+    pub effects: Vec<Effect>
+}
 
 pub struct Encounter<'a> {
     pub run: &'a Run,
-
-    pub energy: u32,
-    pub block: u32,
+    pub player: Player,
 
     pub draw_pile: Vec<CardInstance>,
     pub hand: Vec<CardInstance>,
@@ -16,9 +21,7 @@ pub struct Encounter<'a> {
     pub exhaust_pile: Vec<CardInstance>,
 
     pub turn: u32,
-    pub health: u32,
     pub enemies: Vec<Enemy>,
-    pub effects: Vec<Effect>
 }
 
 impl<'a> Encounter<'a> {
@@ -28,11 +31,13 @@ impl<'a> Encounter<'a> {
         Self {
             run,
             turn: 0,
-            health: run.health,
             enemies: vec![],
-            effects: vec![],
-            energy: 3,
-            block: 0,
+            player: Player {
+                health: run.health,
+                effects: vec![],
+                energy: 3,
+                block: 0,
+            },
             draw_pile: vec![],
             hand: vec![],
             discard_pile: cards, // will be shuffled at the start of the first turn
@@ -40,6 +45,8 @@ impl<'a> Encounter<'a> {
     }}
     
     pub fn begin_turn(&mut self) {
+        assert_eq!(self.player.block, 0, "Previous turn wasn't committed");
+
         self.turn += 1;
 
         self.refill_draw_pile();
@@ -71,8 +78,14 @@ impl<'a> Encounter<'a> {
     }
 
     pub fn end_turn(&mut self) {
-        self.energy = 3;
+
+        self.resolve_enemies();
         self.discard_pile.append(&mut self.hand);
+    }
+
+    pub fn commit_turn(&mut self) {
+        self.player.energy = 3;
+        self.player.block = 0;
     }
 
     pub fn play_by_id(&mut self, card: u32) {
@@ -80,12 +93,12 @@ impl<'a> Encounter<'a> {
 
         let mut card = self.hand.swap_remove(i);
 
-        self.energy -= card.cost;
+        self.player.energy -= card.cost;
 
         let result = card.play(self);
 
         match result {
-            PlayResult::GainBlock(b) => self.block += b,
+            PlayResult::GainBlock(b) => self.player.block += b,
             _ => {}
         }
 
@@ -108,15 +121,13 @@ impl<'a> Encounter<'a> {
         };
 
         let card = self.hand.swap_remove(i);
-        self.energy -= card.cost;
+        self.player.energy -= card.cost;
 
         let result = card.play_on(self,&self.enemies[e]);
 
         match result {
             PlayResult::BlockableDamage(d) => {
-                let (blocked, damage) = Self::split_damage(d, &self.enemies[e]);
-                self.enemies[e].block -= blocked;
-                self.enemies[e].health -= damage;
+                Self::resolve_attack(&mut self.enemies[e], d);
             },
             PlayResult::GainBlock(b) => {
                 self.enemies[e].block += b;
@@ -153,18 +164,56 @@ impl<'a> Encounter<'a> {
         self.draw_pile.shuffle(&mut rand::rng());
     }
 
-    fn handle_result(&mut self, card: &CardInstance, results: PlayResult, target: Option<Enemy>) {
+    fn resolve_enemies(&mut self) {
+        // will need to be mutable for thorns
+        for enemy in self.enemies.iter_mut() {
+            match &enemy.moves[enemy.move_idx] {
+                Moves::Attack(dmg) => {
+                    Self::resolve_attack(&mut self.player, *dmg);
+                },
+                Moves::Buff(effect) => {
 
+                },
+                Moves::Debuff(effect) => {
+
+                }
+            }
+        }
     }
 
-    /// Calculate damage absorbed by an enemy's block and piercing damage that lowers their health
-    fn split_damage(mut damage: u32, target: &Enemy) -> (u32, u32) {
-        if damage < target.block {
-            return (damage, 0);
-        }
+    fn resolve_attack<T: Damageable>(target: &mut T, damage: u32) {
+        let block = target.get_block();
 
-        damage -= target.block;
-        return (target.block, damage);
+        // split damage into amount blocked vs amount that pierces block
+        // there's an elegant way to do this, but i have a headache rn
+        let (damage, blocked) = {
+            if damage < block {
+                (0, damage)
+            } else {
+                (damage - block, block)
+            }
+        };
+
+        target.set_block(block - blocked);
+        target.set_health(target.get_health() - damage);
+    }
+}
+
+impl Damageable for Player {
+    fn get_block(&self) -> u32 {
+        self.block
+    }
+
+    fn get_health(&self) -> u32 {
+        self.health
+    }
+
+    fn set_block(&mut self, block: u32) {
+        self.block = block;
+    }
+
+    fn set_health(&mut self, health: u32) {
+        self.health = health;
     }
 }
 
