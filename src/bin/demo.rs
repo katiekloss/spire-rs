@@ -93,4 +93,61 @@ fn main() {
 
         encounter.commit_turn();
     }
+
+    {
+        encounter.begin_turn();
+        println!("Turn {}: {:?}", encounter.turn, encounter.hand);
+
+        let card: &CardInstance = 'get: {
+            for card in &encounter.hand {
+                if let Card::SilentStrike = card.card {
+                    break 'get card;
+                }
+            }
+
+            panic!();
+        };
+
+        encounter.play_by_id_with_target(card.id, encounter.enemies[0].id);
+        assert_eq!(encounter.enemies[0].health, 43);
+
+        encounter.end_turn();
+        assert_eq!(encounter.enemies[0].effects.len(), 1);
+
+        encounter.commit_turn();
+    }
+
+    {
+        encounter.begin_turn();
+        println!("Turn {}: {:?}", encounter.turn, encounter.hand);
+
+        let card: &CardInstance = 'get: {
+            for card in &encounter.hand {
+                if let Card::SilentDefend = card.card {
+                    break 'get card;
+                }
+            }
+
+            panic!();
+        };
+
+        encounter.play_by_id(card.id);
+
+        let card: &CardInstance = 'get: {
+            for card in &encounter.hand {
+                if let Card::SilentDefend = card.card {
+                    break 'get card;
+                }
+            }
+
+            panic!("try again");
+        };
+
+        encounter.play_by_id(card.id);
+
+        encounter.end_turn();
+        assert_eq!(encounter.player.health, 69);
+
+        encounter.commit_turn();
+    }
 }

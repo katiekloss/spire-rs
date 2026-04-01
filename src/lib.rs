@@ -1,5 +1,4 @@
 
-use std::fmt::Display;
 
 use crate::{cards::CardInstance, relics::Relics};
 
@@ -35,6 +34,10 @@ pub trait Damageable {
     fn get_health(&self) -> u32;
     fn set_block(&mut self, block: u32);
     fn set_health(&mut self, health: u32);
+}
+
+pub trait Effectable {
+    fn get_effects(&self) -> &Vec<Effect>;
 }
 
 #[derive(Clone, PartialEq)]

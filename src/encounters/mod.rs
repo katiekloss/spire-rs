@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use rand::seq::SliceRandom;
 
-use crate::{Damageable, Effect, Keywords, Run, cards::{CardInstance, PlayResult}, monsters::{Enemy, Moves}, relics::Relics};
+use crate::{Damageable, Effect, Effectable, Keywords, Run, cards::{CardInstance, PlayResult}, monsters::{Enemy, Moves}, relics::Relics};
 
 pub struct Player {
     pub energy: u32,
@@ -169,16 +169,29 @@ impl<'a> Encounter<'a> {
         for enemy in self.enemies.iter_mut() {
             match &enemy.moves[enemy.move_idx] {
                 Moves::Attack(dmg) => {
-                    Self::resolve_attack(&mut self.player, *dmg);
+                    let dmg = Self::query_attack_damage(enemy, *dmg);
+                    Self::resolve_attack(&mut self.player, dmg);
                 },
                 Moves::Buff(effect) => {
-
+                    enemy.effects.push(effect.clone());
                 },
                 Moves::Debuff(effect) => {
-
+                    self.player.effects.push(effect.clone());
                 }
             }
+
+            enemy.move_idx = (enemy.move_idx + 1) % enemy.moves.len();
         }
+    }
+
+    fn query_attack_damage<T: Effectable>(source: &T, base_damage: u32) -> u32 {
+        let mut total_damage = base_damage;
+        for effect in source.get_effects() {
+            match effect {
+                Effect::Strength(s) => total_damage += s,
+            }
+        }
+        total_damage
     }
 
     fn resolve_attack<T: Damageable>(target: &mut T, damage: u32) {

@@ -1,6 +1,6 @@
-use std::{collections::HashMap, sync::{LazyLock, Mutex}};
+use std::{collections::HashMap, fmt::{Display}, sync::{LazyLock, Mutex}};
 
-use crate::{Damageable, Effect};
+use crate::{Damageable, Effect, Effectable};
 
 static ENEMY_ID: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(0));
 static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
@@ -77,5 +77,11 @@ impl Damageable for Enemy {
 
     fn set_health(&mut self, health: u32) {
         self.health = health;
+    }
+}
+
+impl Effectable for Enemy {
+    fn get_effects(&self) -> &Vec<Effect> {
+        &self.effects
     }
 }
