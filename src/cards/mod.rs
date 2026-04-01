@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::{LazyLock, Mutex}};
+use std::{collections::HashMap, fmt::{Debug}, sync::{LazyLock, Mutex}};
 
 use crate::{Keywords, encounters::Encounter, monsters::Enemy};
 
@@ -13,7 +13,7 @@ static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
 
 static CARD_IDS: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(0));
 
-#[derive(Eq, PartialEq, Hash, Clone)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum Card {
     SilentStrike,
     SilentDefend,
@@ -33,6 +33,12 @@ pub struct CardInstance {
     pub cost: u32,
     // secondary_cost: u8 // regent
     pub keywords: Vec<Keywords>
+}
+
+impl Debug for CardInstance {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CardInstance").field("id", &self.id).field("card", &self.card).finish()
+    }
 }
 
 pub enum PlayResult {

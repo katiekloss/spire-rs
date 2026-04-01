@@ -10,3 +10,4 @@ steps:
     image: rust:1-alpine
     commands:
       - cargo test
+      - cargo run --bin=demo

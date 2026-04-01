@@ -23,6 +23,9 @@ fn main() {
 
     {
         encounter.begin_turn();
+        assert_eq!(encounter.turn, 1);
+        println!("Turn {}: {:?}", encounter.turn, encounter.hand);
+
         assert_eq!(encounter.hand.len(), 7); // ring of the snake
         assert_eq!(encounter.energy, 3);
 
@@ -48,10 +51,11 @@ fn main() {
         encounter.end_turn();
     }
 
-    assert_eq!(encounter.turn, 2);
-
     {
         encounter.begin_turn();
+        assert_eq!(encounter.turn, 2);
+
+        println!("Turn {}: {:?}", encounter.turn, encounter.hand);
         assert_eq!(encounter.hand.len(), 5); // no more ring of the snake
         assert_eq!(encounter.energy, 3);
 
@@ -66,10 +70,7 @@ fn main() {
         };
 
         encounter.play_by_id_with_target(card.id, encounter.enemies[0].id);
-    }
-}
 
-#[test]
-fn run_demo() {
-    main()
+        encounter.end_turn();
+    }
 }

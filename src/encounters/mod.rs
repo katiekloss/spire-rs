@@ -71,12 +71,8 @@ impl<'a> Encounter<'a> {
     }
 
     pub fn end_turn(&mut self) {
-        self.turn += 1;
         self.energy = 3;
-
-        while let Some(card) = self.hand.pop() {
-            self.discard_pile.push(card);
-        }
+        self.discard_pile.append(&mut self.hand);
     }
 
     pub fn play_by_id(&mut self, card: u32) {
