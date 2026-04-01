@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use rand::seq::SliceRandom;
 
-use crate::{Effect, Keywords, Run, cards::CardInstance, monsters::Monster, relics::Relics};
+use crate::{Effect, Keywords, Run, cards::{CardInstance, PlayResult}, monsters::Enemy, relics::Relics};
 
 pub struct Encounter<'a> {
     pub run: &'a Run,
@@ -17,7 +17,7 @@ pub struct Encounter<'a> {
 
     pub turn: u32,
     pub health: u32,
-    pub enemies: Vec<Box<dyn Monster>>,
+    pub enemies: Vec<Enemy>,
     pub effects: Vec<Box<dyn Effect>>
 }
 
@@ -80,26 +80,67 @@ impl<'a> Encounter<'a> {
     }
 
     pub fn play_by_id(&mut self, card: u32) {
-        let i = 'get: {
-            for i in 0..self.hand.len() {
-                if self.hand[i].id == card {
-                    break 'get i;
-                }
-            }
-            panic!("Can't find card");
-        };
+        let i = self.find_card_in_hand(card);
 
         let mut card = self.hand.swap_remove(i);
 
         self.energy -= card.cost;
 
-        card.play(self);
+        let result = card.play(self);
+
+        match result {
+            PlayResult::GainBlock(b) => self.block += b,
+            _ => {}
+        }
 
         if card.keywords.contains(&Keywords::Exhaust) {
             self.exhaust_pile.push(card);
         } else {
             self.discard_pile.push(card);
         }
+    }
+
+    pub fn play_by_id_with_target(&mut self, card: u32, target: u32) {
+        let i = self.find_card_in_hand(card);
+        let e = 'get: {
+            for e in 0..self.enemies.len() {
+                if self.enemies[e].id == target {
+                    break 'get e;
+                }
+            }
+            panic!("Can't find enemy");
+        };
+
+        let card = self.hand.swap_remove(i);
+        self.energy -= card.cost;
+
+        let result = card.play_on(self, &self.enemies[e]);
+
+        match result {
+            PlayResult::BlockableDamage(d) => {
+                self.enemies[e].health -= d;
+            },
+            PlayResult::GainBlock(b) => {
+                self.enemies[e].block += b;
+            },
+            _ => {}
+        }
+
+        if card.keywords.contains(&Keywords::Exhaust) {
+            self.exhaust_pile.push(card);
+        } else {
+            self.discard_pile.push(card);
+        }
+    }
+
+    #[inline(always)]
+    fn find_card_in_hand(&self, card: u32) -> usize {
+        for i in 0..self.hand.len() {
+            if self.hand[i].id == card {
+                return i;
+            }
+        }
+        panic!("Can't find card");
     }
 
     #[inline]

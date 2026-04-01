@@ -1,4 +1,4 @@
-use spire_rs::{Run, cards::{Card, CardInstance}, monsters::FuzzyWurmCrawler, encounters::Encounter};
+use spire_rs::{Run, cards::{Card, CardInstance}, encounters::Encounter, monsters::{Enemy, Monsters}};
 
 fn main() {
     let mut run = Run {
@@ -19,7 +19,7 @@ fn main() {
     run.relics.push(spire_rs::relics::Relics::RingOfTheSnake);
 
     let mut encounter = Encounter::new(&run);
-    encounter.enemies.push(Box::new(FuzzyWurmCrawler{}));
+    encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
 
     {
         encounter.begin_turn();
@@ -37,7 +37,8 @@ fn main() {
             panic!(); // lol uh oh
         };
 
-        // mentioned elsewhere: this is gross, I need a more elegant solution to the borrow problem than this
+        // this is an example of the borrow issue, to get the card we have to borrow it from the encounter,
+        // which immutably borrows the encounter so we can't mutably borrow it here. aaaaaaaaaaaaaaaaaaaaa
         encounter.play_by_id(card.id);
 
         assert_eq!(encounter.hand.len(), 6);
@@ -53,5 +54,22 @@ fn main() {
         encounter.begin_turn();
         assert_eq!(encounter.hand.len(), 5); // no more ring of the snake
         assert_eq!(encounter.energy, 3);
+
+        let card: &CardInstance = 'get: {
+            for card in &encounter.hand {
+                if let Card::SilentStrike = card.card {
+                    break 'get card;
+                }
+            }
+
+            panic!();
+        };
+
+        encounter.play_by_id_with_target(card.id, encounter.enemies[0].id);
     }
+}
+
+#[test]
+fn run_demo() {
+    main()
 }

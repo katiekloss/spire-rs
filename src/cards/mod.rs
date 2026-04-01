@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::{LazyLock, Mutex}};
 
-use crate::{Keywords, encounters::Encounter};
+use crate::{Keywords, encounters::Encounter, monsters::Enemy};
 
 static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
     let mut m = HashMap::new();
@@ -35,6 +35,12 @@ pub struct CardInstance {
     pub keywords: Vec<Keywords>
 }
 
+pub enum PlayResult {
+    NoOp,
+    BlockableDamage(u32),
+    GainBlock(u32)
+}
+
 impl CardInstance {
     pub fn new(card: Card) -> Self {
         Self {
@@ -45,12 +51,21 @@ impl CardInstance {
         }
     }
 
-    pub fn play(&mut self, encounter: &mut Encounter) {
+    pub fn play(&mut self, _encounter: &Encounter) -> PlayResult {
         match self.card {
             Card::SilentDefend => {
-                encounter.block += 5;
+                PlayResult::GainBlock(5)
             },
-            _ => {}
+            _ => PlayResult::NoOp
+        }
+    }
+
+    pub(crate) fn play_on(&self, _encounter: &Encounter, _target: &Enemy) -> PlayResult {
+        match self.card {
+            Card::SilentStrike => {
+                PlayResult::BlockableDamage(6)
+            },
+            _ => PlayResult::NoOp
         }
     }
 }

@@ -19,10 +19,6 @@ pub enum EncounterOutcome {
     Dead
 }
 
-pub struct Enemy {
-    pub effects: Vec<Box<dyn Effect>>
-}
-
 pub trait Effect {
 
 }
