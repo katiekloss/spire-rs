@@ -71,6 +71,22 @@ fn main() {
 
         encounter.play_by_id_with_target(card.id, encounter.enemies[0].id);
 
+        let card: &CardInstance = 'get: {
+            for card in &encounter.hand {
+                if let Card::SilentDefend = card.card {
+                    break 'get card;
+                }
+            }
+
+            panic!();
+        };
+
+        encounter.play_by_id_with_target(card.id, encounter.enemies[0].id);
+
+        assert_eq!(encounter.block, 5);
+        assert_eq!(encounter.energy, 1);
+        assert_eq!(encounter.enemies[0].health, 49);
+
         encounter.end_turn();
     }
 }

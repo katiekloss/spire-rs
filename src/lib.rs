@@ -19,8 +19,8 @@ pub enum EncounterOutcome {
     Dead
 }
 
-pub trait Effect {
-
+pub enum Effect {
+    Strength(u32)
 }
 
 pub trait Relic {

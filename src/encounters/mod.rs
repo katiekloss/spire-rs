@@ -18,7 +18,7 @@ pub struct Encounter<'a> {
     pub turn: u32,
     pub health: u32,
     pub enemies: Vec<Enemy>,
-    pub effects: Vec<Box<dyn Effect>>
+    pub effects: Vec<Effect>
 }
 
 impl<'a> Encounter<'a> {
@@ -110,11 +110,13 @@ impl<'a> Encounter<'a> {
         let card = self.hand.swap_remove(i);
         self.energy -= card.cost;
 
-        let result = card.play_on(self, &self.enemies[e]);
+        let result = card.play_on(self,&self.enemies[e]);
 
         match result {
             PlayResult::BlockableDamage(d) => {
-                self.enemies[e].health -= d;
+                let (blocked, damage) = Self::split_damage(d, &self.enemies[e]);
+                self.enemies[e].block -= blocked;
+                self.enemies[e].health -= damage;
             },
             PlayResult::GainBlock(b) => {
                 self.enemies[e].block += b;
@@ -150,10 +152,24 @@ impl<'a> Encounter<'a> {
         }
         self.draw_pile.shuffle(&mut rand::rng());
     }
+
+    fn handle_result(&mut self, card: &CardInstance, results: PlayResult, target: Option<Enemy>) {
+
+    }
+
+    /// Calculate damage absorbed by an enemy's block and piercing damage that lowers their health
+    fn split_damage(mut damage: u32, target: &Enemy) -> (u32, u32) {
+        if damage < target.block {
+            return (damage, 0);
+        }
+
+        damage -= target.block;
+        return (target.block, damage);
+    }
 }
 
 #[cfg(test)]
-mod tests {
+mod draw_tests {
     use crate::{Run, cards::CardInstance, encounters::Encounter};
 
     fn start_run(cards: u32) -> Run {
