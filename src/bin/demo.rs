@@ -48,8 +48,8 @@ fn main() {
         assert_eq!(encounter.player.energy, 2);
         assert_eq!(encounter.player.block, 5);
 
+        encounter.yield_turn();
         encounter.end_turn();
-        encounter.commit_turn();
     }
 
     {
@@ -87,11 +87,11 @@ fn main() {
         assert_eq!(encounter.player.energy, 1);
         assert_eq!(encounter.enemies[0].health, 49);
 
-        encounter.end_turn();
+        encounter.yield_turn();
         assert_eq!(encounter.player.block, 1);
         assert_eq!(encounter.player.health, 70);
 
-        encounter.commit_turn();
+        encounter.end_turn();
     }
 
     {
@@ -111,10 +111,10 @@ fn main() {
         encounter.play_by_id_with_target(card.id, encounter.enemies[0].id);
         assert_eq!(encounter.enemies[0].health, 43);
 
-        encounter.end_turn();
+        encounter.yield_turn();
         assert_eq!(encounter.enemies[0].effects.len(), 1);
 
-        encounter.commit_turn();
+        encounter.end_turn();
     }
 
     {
@@ -145,9 +145,9 @@ fn main() {
 
         encounter.play_by_id(card.id);
 
-        encounter.end_turn();
+        encounter.yield_turn();
         assert_eq!(encounter.player.health, 69);
 
-        encounter.commit_turn();
+        encounter.end_turn();
     }
 }

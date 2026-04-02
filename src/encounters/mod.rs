@@ -77,13 +77,13 @@ impl<'a> Encounter<'a> {
         }
     }
 
-    pub fn end_turn(&mut self) {
+    pub fn yield_turn(&mut self) {
 
         self.resolve_enemies();
         self.discard_pile.append(&mut self.hand);
     }
 
-    pub fn commit_turn(&mut self) {
+    pub fn end_turn(&mut self) {
         self.player.energy = 3;
         self.player.block = 0;
     }
