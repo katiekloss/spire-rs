@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use rand::seq::SliceRandom;
 
-use crate::{Damageable, Effect, Effectable, Keywords, Run, cards::{CardInstance, PlayResult}, monsters::{Enemy, Moves}, relics::Relics};
+use crate::{Damageable, Effect, Effectable, Keywords, Run, cards::{CardInstance, SelfPlayResult, TargetedPlayResult}, monsters::{Enemy, Moves}, relics::Relics};
 
 pub struct Player {
     pub energy: u32,
@@ -95,11 +95,16 @@ impl<'a> Encounter<'a> {
 
         self.player.energy -= card.cost;
 
-        let result = card.play(self);
-
-        match result {
-            PlayResult::GainBlock(b) => self.player.block += b,
-            _ => {}
+        for result in card.play(self) {
+            match result {
+                SelfPlayResult::GainBlock(b) => self.player.block += b,
+                SelfPlayResult::AffectSelf(x) => self.player.effects.push(x),
+                SelfPlayResult::AffectAllOthers(x) => {
+                    for enemy in self.enemies.iter_mut() {
+                        enemy.effects.push(x.clone());
+                    }
+                }
+            }
         }
 
         if card.keywords.contains(&Keywords::Exhaust) {
@@ -123,16 +128,14 @@ impl<'a> Encounter<'a> {
         let card = self.hand.swap_remove(i);
         self.player.energy -= card.cost;
 
-        let result = card.play_on(self,&self.enemies[e]);
-
-        match result {
-            PlayResult::BlockableDamage(d) => {
-                Self::resolve_attack(&mut self.enemies[e], d);
-            },
-            PlayResult::GainBlock(b) => {
-                self.enemies[e].block += b;
-            },
-            _ => {}
+        for result in card.play_on(self,&self.enemies[e]) {
+            match result {
+                TargetedPlayResult::BlockableDamage(d) => {
+                    Self::resolve_attack(&mut self.enemies[e], d);
+                },
+                TargetedPlayResult::Buff(x) => self.player.effects.push(x),
+                TargetedPlayResult::Debuff(x) => self.enemies[e].effects.push(x)
+            }
         }
 
         if card.keywords.contains(&Keywords::Exhaust) {
@@ -189,6 +192,7 @@ impl<'a> Encounter<'a> {
         for effect in source.get_effects() {
             match effect {
                 Effect::Strength(s) => total_damage += s,
+                Effect::Weak(_) => total_damage = ((base_damage as f32) * 0.75).floor() as u32
             }
         }
         total_damage

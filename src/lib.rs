@@ -22,7 +22,8 @@ pub enum EncounterOutcome {
 
 #[derive(Clone)]
 pub enum Effect {
-    Strength(u32)
+    Strength(u32),
+    Weak(u8)
 }
 
 pub trait Relic {

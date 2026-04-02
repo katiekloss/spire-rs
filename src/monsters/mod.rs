@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::{Display}, sync::{LazyLock, Mutex}};
+use std::{collections::HashMap, sync::{LazyLock, Mutex}};
 
 use crate::{Damageable, Effect, Effectable};
 

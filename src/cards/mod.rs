@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::{Debug}, sync::{LazyLock, Mutex}};
 
-use crate::{Keywords, encounters::Encounter, monsters::Enemy};
+use crate::{Effect, Keywords, encounters::Encounter, monsters::Enemy};
 
 static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
     let mut m = HashMap::new();
@@ -41,10 +41,16 @@ impl Debug for CardInstance {
     }
 }
 
-pub enum PlayResult {
-    NoOp,
+pub enum SelfPlayResult {
+    GainBlock(u32),
+    AffectSelf(Effect),
+    AffectAllOthers(Effect)
+}
+
+pub enum TargetedPlayResult {
     BlockableDamage(u32),
-    GainBlock(u32)
+    Buff(Effect),
+    Debuff(Effect)
 }
 
 impl CardInstance {
@@ -57,21 +63,19 @@ impl CardInstance {
         }
     }
 
-    pub fn play(&mut self, _encounter: &Encounter) -> PlayResult {
+    pub fn play(&mut self, _encounter: &Encounter) -> Vec<SelfPlayResult> {
         match self.card {
-            Card::SilentDefend => {
-                PlayResult::GainBlock(5)
-            },
-            _ => PlayResult::NoOp
+            Card::SilentDefend => vec![SelfPlayResult::GainBlock(5)],
+            Card::Survivor => vec![SelfPlayResult::GainBlock(8) /* and also */],
+            _ => vec![]
         }
     }
 
-    pub(crate) fn play_on(&self, _encounter: &Encounter, _target: &Enemy) -> PlayResult {
+    pub fn play_on(&self, _encounter: &Encounter, _target: &Enemy) -> Vec<TargetedPlayResult> {
         match self.card {
-            Card::SilentStrike => {
-                PlayResult::BlockableDamage(6)
-            },
-            _ => PlayResult::NoOp
+            Card::SilentStrike => vec![TargetedPlayResult::BlockableDamage(6)],
+            Card::Neutralize => vec![TargetedPlayResult::BlockableDamage(3), TargetedPlayResult::Debuff(Effect::Weak(1))],
+            _ => vec![]
         }
     }
 }
