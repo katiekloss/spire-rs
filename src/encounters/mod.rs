@@ -269,6 +269,7 @@ mod draw_tests {
         let run = start_run(6);
         let mut encounter = Encounter::new(&run);
         encounter.begin_turn();
+        encounter.yield_turn();
         encounter.end_turn();
 
         assert_eq!(1, encounter.draw_pile.len());
