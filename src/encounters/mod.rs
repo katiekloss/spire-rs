@@ -88,10 +88,11 @@ impl<'a> Encounter<'a> {
         self.player.block = 0;
     }
 
-    pub fn play_by_id(&mut self, card: u32) {
-        let i = self.find_card_in_hand(card);
-
-        let mut card = self.hand.swap_remove(i);
+    pub fn play_by_id(&mut self, card: u32, other_cards: Vec<u32>) {
+        let mut card = self.hand.swap_remove(self.find_card_in_hand(card));
+        let mut other_cards: Vec<CardInstance> = other_cards.iter()
+            .map(|i| self.hand.swap_remove(self.find_card_in_hand(*i)))
+            .collect();
 
         self.player.energy -= card.cost;
 
@@ -103,6 +104,12 @@ impl<'a> Encounter<'a> {
                     for enemy in self.enemies.iter_mut() {
                         enemy.effects.push(x.clone());
                     }
+                },
+                SelfPlayResult::Discard(_) => {
+                    // if other_cards.len() != n.try_into().unwrap() {
+                    //     panic!("Provided {} cards but only {} needs to be discarded", other_cards.len(), n);
+                    // }
+                    self.discard_pile.append(&mut other_cards);
                 }
             }
         }
@@ -145,6 +152,10 @@ impl<'a> Encounter<'a> {
         }
     }
 
+    /// Returns the index of the card with the given ID in the hand pile
+    /// ```
+    /// let card: CardInstance = self.hand.swap_remove(self.find_card_in_hand(123));
+    /// ```
     #[inline(always)]
     fn find_card_in_hand(&self, card: u32) -> usize {
         for i in 0..self.hand.len() {

@@ -30,7 +30,7 @@ fn main() {
         assert_eq!(encounter.player.energy, 3);
 
         let card = get_card!(Card::SilentDefend, encounter.hand).unwrap();
-        encounter.play_by_id(card.id);
+        encounter.play_by_id(card.id, vec![]);
 
         assert_eq!(encounter.hand.len(), 6);
         assert_eq!(encounter.player.energy, 2);
@@ -52,7 +52,7 @@ fn main() {
         encounter.play_by_id_with_target(card.id, encounter.enemies[0].id);
 
         let card = get_card!(Card::SilentDefend, encounter.hand).unwrap();
-        encounter.play_by_id(card.id);
+        encounter.play_by_id(card.id, vec![]);
 
         assert_eq!(encounter.player.block, 5);
         assert_eq!(encounter.player.energy, 1);
@@ -84,14 +84,22 @@ fn main() {
         encounter.begin_turn();
         println!("Turn {}: {:?}", encounter.turn, encounter.hand);
 
-        let card = get_card!(Card::SilentDefend, encounter.hand).unwrap();
-        encounter.play_by_id(card.id);
+        if let Some(survivor) = get_card!(Card::Survivor, encounter.hand) {
+            let discard = encounter.hand.iter().filter(|i| i.id != survivor.id).nth(0).unwrap();
+            println!("Playing Survivor, discarding {:?}", discard);
+            encounter.play_by_id(survivor.id, vec![discard.id]);
+        } else {
+            println!("Playing two Defends");
+            let card = get_card!(Card::SilentDefend, encounter.hand).unwrap();
+            encounter.play_by_id(card.id, vec![]);
 
-        let card = get_card!(Card::SilentDefend, encounter.hand).expect("try again");
-        encounter.play_by_id(card.id);
+            let card = get_card!(Card::SilentDefend, encounter.hand).expect("try again");
+            encounter.play_by_id(card.id, vec![]);
+        }
+
+        assert_eq!(3, encounter.hand.len());
 
         encounter.yield_turn();
-        assert_eq!(encounter.player.health, 69);
 
         encounter.end_turn();
     }

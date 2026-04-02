@@ -42,6 +42,7 @@ impl Debug for CardInstance {
 }
 
 pub enum SelfPlayResult {
+    Discard(u32),
     GainBlock(u32),
     AffectSelf(Effect),
     AffectAllOthers(Effect)
@@ -66,7 +67,7 @@ impl CardInstance {
     pub fn play(&mut self, _encounter: &Encounter) -> Vec<SelfPlayResult> {
         match self.card {
             Card::SilentDefend => vec![SelfPlayResult::GainBlock(5)],
-            Card::Survivor => vec![SelfPlayResult::GainBlock(8) /* and also */],
+            Card::Survivor => vec![SelfPlayResult::Discard(1), SelfPlayResult::GainBlock(8)],
             _ => vec![]
         }
     }
