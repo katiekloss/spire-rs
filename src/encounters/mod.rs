@@ -152,10 +152,6 @@ impl<'a> Encounter<'a> {
         }
     }
 
-    /// Returns the index of the card with the given ID in the hand pile
-    /// ```
-    /// let card: CardInstance = self.hand.swap_remove(self.find_card_in_hand(123));
-    /// ```
     #[inline(always)]
     fn find_card_in_hand(&self, card: u32) -> usize {
         for i in 0..self.hand.len() {
