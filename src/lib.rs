@@ -51,3 +51,23 @@ pub enum Keywords {
     Sly,
     Unplayable
 }
+
+/// Try to find a specific card in a pile of CardInstances (usually your hand)
+/// ```
+/// # use spire_rs::{get_card, cards::{Card, CardInstance}};
+/// let hand = vec![CardInstance::new(Card::SilentDefend)];
+/// let card = get_card!(Card::SilentDefend, hand).expect("aw beans, I don't have a defend!");
+/// ```
+#[macro_export]
+macro_rules! get_card {
+    ($card:path, $hand:expr) => {
+        'get: {
+            for c in &$hand {
+                if let $card = c.card {
+                    break 'get Some(c);
+                }
+            }
+            None
+        }
+    }
+}
