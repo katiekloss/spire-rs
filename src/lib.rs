@@ -22,7 +22,7 @@ pub enum EncounterOutcome {
     Dead
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum Effect {
     Strength(u32),
     Weak(u8)

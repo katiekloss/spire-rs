@@ -4,10 +4,10 @@ use crate::{Effect, Keywords, encounters::Encounter, monsters::Enemy};
 
 static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
     let mut m = HashMap::new();
-    m.insert(Card::Neutralize, CardData{ cost: 0 });
-    m.insert(Card::SilentStrike, CardData { cost: 1 });
-    m.insert(Card::SilentDefend, CardData { cost: 1 });
-    m.insert(Card::Survivor, CardData { cost: 1 });
+    m.insert(Card::Neutralize, CardData{ cost: 0, results: CardResults::Targeted(vec![TargetedPlayResult::BlockableDamage(3), TargetedPlayResult::Debuff(Effect::Weak(1))]) });
+    m.insert(Card::SilentStrike, CardData { cost: 1, results: CardResults::Targeted(vec![TargetedPlayResult::BlockableDamage(6)]) });
+    m.insert(Card::SilentDefend, CardData { cost: 1, results: CardResults::PlaysOnSelf(vec![SelfPlayResult::GainBlock(5)]) });
+    m.insert(Card::Survivor, CardData { cost: 1, results: CardResults::PlaysOnSelf(vec![SelfPlayResult::Discard(1), SelfPlayResult::GainBlock(8)]) });
     m
 });
 
@@ -21,7 +21,14 @@ pub enum Card {
     Survivor
 }
 
+#[derive(Clone)]
+pub enum CardResults {
+    PlaysOnSelf(Vec<SelfPlayResult>),
+    Targeted(Vec<TargetedPlayResult>)
+}
+
 pub struct CardData {
+    pub results: CardResults,
     pub cost: u32,
     // secondary_cost: u8 // regent
 }
@@ -41,6 +48,7 @@ impl Debug for CardInstance {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum SelfPlayResult {
     Discard(u32),
     GainBlock(u32),
@@ -48,6 +56,7 @@ pub enum SelfPlayResult {
     AffectAllOthers(Effect)
 }
 
+#[derive(Clone, Copy)]
 pub enum TargetedPlayResult {
     BlockableDamage(u32),
     Buff(Effect),
@@ -64,19 +73,18 @@ impl CardInstance {
         }
     }
 
+    // keeping these separate because I feel like they'll eventually be more complicated
     pub fn play(&mut self, _encounter: &Encounter) -> Vec<SelfPlayResult> {
-        match self.card {
-            Card::SilentDefend => vec![SelfPlayResult::GainBlock(5)],
-            Card::Survivor => vec![SelfPlayResult::Discard(1), SelfPlayResult::GainBlock(8)],
-            _ => vec![]
+        match &CARDS[&self.card].results {
+            CardResults::PlaysOnSelf(results) => results.clone(),
+            _ => panic!()
         }
     }
 
     pub fn play_on(&self, _encounter: &Encounter, _target: &Enemy) -> Vec<TargetedPlayResult> {
-        match self.card {
-            Card::SilentStrike => vec![TargetedPlayResult::BlockableDamage(6)],
-            Card::Neutralize => vec![TargetedPlayResult::BlockableDamage(3), TargetedPlayResult::Debuff(Effect::Weak(1))],
-            _ => vec![]
+        match &CARDS[&self.card].results {
+            CardResults::Targeted(results) => results.clone(),
+            _ => panic!()
         }
     }
 }
