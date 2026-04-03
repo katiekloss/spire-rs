@@ -4,10 +4,11 @@ use crate::{Effect, Keywords, encounters::Encounter, monsters::Enemy};
 
 static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
     let mut m = HashMap::new();
-    m.insert(Card::Neutralize, CardData{ cost: 0, results: CardResults::Targeted(vec![TargetedPlayResult::BlockableDamage(3), TargetedPlayResult::Debuff(Effect::Weak(1))]) });
-    m.insert(Card::SilentStrike, CardData { cost: 1, results: CardResults::Targeted(vec![TargetedPlayResult::BlockableDamage(6)]) });
-    m.insert(Card::SilentDefend, CardData { cost: 1, results: CardResults::PlaysOnSelf(vec![SelfPlayResult::GainBlock(5)]) });
-    m.insert(Card::Survivor, CardData { cost: 1, results: CardResults::PlaysOnSelf(vec![SelfPlayResult::Discard(1), SelfPlayResult::GainBlock(8)]) });
+    m.insert(Card::Neutralize, CardData{ cost: 0, keywords: vec![], results: CardResults::Targeted(vec![TargetedPlayResult::BlockableDamage(3), TargetedPlayResult::Debuff(Effect::Weak(1))]) });
+    m.insert(Card::SilentStrike, CardData { cost: 1, keywords: vec![], results: CardResults::Targeted(vec![TargetedPlayResult::BlockableDamage(6)]) });
+    m.insert(Card::SilentDefend, CardData { cost: 1, keywords: vec![], results: CardResults::PlaysOnSelf(vec![SelfPlayResult::GainBlock(5)]) });
+    m.insert(Card::Survivor, CardData { cost: 1, keywords: vec![], results: CardResults::PlaysOnSelf(vec![SelfPlayResult::Discard(1), SelfPlayResult::GainBlock(8)]) });
+    m.insert(Card::FlickFlack, CardData { cost: 1, keywords: vec![Keywords::Sly], results: CardResults::PlaysOnSelf(vec![SelfPlayResult::DamageAllOthers(7)])});
     m
 });
 
@@ -18,7 +19,8 @@ pub enum Card {
     SilentStrike,
     SilentDefend,
     Neutralize,
-    Survivor
+    Survivor,
+    FlickFlack
 }
 
 #[derive(Clone)]
@@ -29,6 +31,7 @@ pub enum CardResults {
 
 pub struct CardData {
     pub results: CardResults,
+    pub keywords: Vec<Keywords>,
     pub cost: u32,
     // secondary_cost: u8 // regent
 }
@@ -50,6 +53,7 @@ impl Debug for CardInstance {
 
 #[derive(Clone, Copy)]
 pub enum SelfPlayResult {
+    DamageAllOthers(u32),
     Discard(u32),
     GainBlock(u32),
     AffectSelf(Effect),
@@ -68,8 +72,8 @@ impl CardInstance {
         Self {
             id: { let mut i = CARD_IDS.lock().unwrap(); *i += 1; *i },
             cost: CARDS[&card].cost,
+            keywords: CARDS[&card].keywords.clone(),
             card,
-            keywords: vec![]
         }
     }
 
