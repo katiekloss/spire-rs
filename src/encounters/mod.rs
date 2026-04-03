@@ -243,7 +243,7 @@ impl Damageable for Player {
 
 #[cfg(test)]
 mod draw_tests {
-    use crate::{Run, cards::CardInstance, encounters::Encounter};
+    use crate::{Run, cards::CardInstance, encounters::Encounter, map::MapGenerator};
 
     fn start_run(cards: u32) -> Run {
         let mut run = Run {
@@ -251,7 +251,8 @@ mod draw_tests {
             floor: 1,
             gold: 0,
             health: 1,
-            relics: vec![]
+            relics: vec![],
+            current_room: MapGenerator::generate()
         };
 
         for _ in 0..cards {

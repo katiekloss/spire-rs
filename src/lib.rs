@@ -1,11 +1,12 @@
 
 
-use crate::{cards::CardInstance, relics::Relics};
+use crate::{cards::CardInstance, map::MapRoom, relics::Relics};
 
 pub mod cards;
 pub mod relics;
 pub mod monsters;
 pub mod encounters;
+pub mod map;
 
 pub struct Run {
     pub floor: u32,
@@ -13,6 +14,7 @@ pub struct Run {
     pub health: u32,
     pub gold: u32,
     pub deck: Vec<CardInstance>,
+    pub current_room: MapRoom
 }
 
 pub enum EncounterOutcome {

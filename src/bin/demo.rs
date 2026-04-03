@@ -1,4 +1,4 @@
-use spire_rs::{Run, cards::{Card, CardInstance}, encounters::Encounter, get_card, monsters::{Enemy, Monsters}};
+use spire_rs::{Run, cards::{Card, CardInstance}, encounters::Encounter, get_card, map::MapGenerator, monsters::{Enemy, Monsters}};
 
 fn main() {
     let mut run = Run {
@@ -6,7 +6,8 @@ fn main() {
         relics: vec![],
         health: 70,
         gold: 99,
-        deck: vec![]
+        deck: vec![],
+        current_room: MapGenerator::generate()
     };
 
     for _ in 0..5 {
