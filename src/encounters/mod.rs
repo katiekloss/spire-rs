@@ -233,7 +233,11 @@ impl<'a> Encounter<'a> {
         };
 
         target.set_block(block - blocked);
-        target.set_health(target.get_health() - damage);
+        if damage > target.get_health() {
+            target.set_health(0);
+        } else {
+            target.set_health(target.get_health() - damage);
+        }
     }
 }
 

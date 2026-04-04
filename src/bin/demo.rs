@@ -1,13 +1,13 @@
-use spire_rs::{Run, cards::{Card, CardInstance}, encounters::Encounter, get_card, map::MapGenerator, monsters::{Enemy, Monsters}};
+use spire_rs::{Run, cards::{Card, CardInstance}, encounters::Encounter, get_card, map::MapGenerator, monsters::{Enemy, Monsters, Moves}, relics::Relics};
 
 fn main() {
     let mut run = Run {
         floor: 0,
-        relics: vec![],
+        relics: vec![Relics::RingOfTheSnake],
         health: 70,
         gold: 99,
         deck: vec![],
-        current_room: MapGenerator::generate()
+        current_room: MapGenerator::generate(),
     };
 
     for _ in 0..5 {
@@ -17,91 +17,74 @@ fn main() {
     run.deck.push(CardInstance::new(Card::Survivor));
     run.deck.push(CardInstance::new(Card::Neutralize));
 
-    run.relics.push(spire_rs::relics::Relics::RingOfTheSnake);
-
     let mut encounter = Encounter::new(&run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
 
-    {
+    loop {
         encounter.begin_turn();
-        assert_eq!(encounter.turn, 1);
-        println!("Turn {}: {:?}", encounter.turn, encounter.hand);
+        let health = encounter.player.health;
+        println!("Starting turn {}", encounter.turn);
+        println!("Drew: {:?}", encounter.hand);
 
-        assert_eq!(encounter.hand.len(), 7); // ring of the snake
-        assert_eq!(encounter.player.energy, 3);
-
-        let card = get_card!(Card::SilentDefend, encounter.hand).unwrap();
-        encounter.play_by_id(card.id, vec![]);
-
-        assert_eq!(encounter.hand.len(), 6);
-        assert_eq!(encounter.player.energy, 2);
-        assert_eq!(encounter.player.block, 5);
+        match encounter.enemies[0].intent() {
+            spire_rs::monsters::Moves::Attack(dmg) => respond_to_attack(&mut encounter),
+            _ => general_response(&mut encounter),
+        };
 
         encounter.yield_turn();
         encounter.end_turn();
-    }
 
-    {
-        encounter.begin_turn();
-        assert_eq!(encounter.turn, 2);
+        println!("Took {} damage", health - encounter.player.health);
 
-        println!("Turn {}: {:?}", encounter.turn, encounter.hand);
-        assert_eq!(encounter.hand.len(), 5); // no more ring of the snake
-        assert_eq!(encounter.player.energy, 3);
-
-        let card = get_card!(Card::SilentStrike, encounter.hand).unwrap();
-        encounter.play_by_id_with_target(card.id, encounter.enemies[0].id);
-
-        let card = get_card!(Card::SilentDefend, encounter.hand).unwrap();
-        encounter.play_by_id(card.id, vec![]);
-
-        assert_eq!(encounter.player.block, 5);
-        assert_eq!(encounter.player.energy, 1);
-        assert_eq!(encounter.enemies[0].health, 49);
-
-        encounter.yield_turn();
-        assert_eq!(encounter.player.block, 1);
-        assert_eq!(encounter.player.health, 70);
-
-        encounter.end_turn();
-    }
-
-    {
-        encounter.begin_turn();
-        println!("Turn {}: {:?}", encounter.turn, encounter.hand);
-
-        let card = get_card!(Card::SilentStrike, encounter.hand).unwrap();
-        encounter.play_by_id_with_target(card.id, encounter.enemies[0].id);
-
-        assert_eq!(encounter.enemies[0].health, 43);
-
-        encounter.yield_turn();
-        assert_eq!(encounter.enemies[0].effects.len(), 1);
-
-        encounter.end_turn();
-    }
-
-    {
-        encounter.begin_turn();
-        println!("Turn {}: {:?}", encounter.turn, encounter.hand);
-
-        if let Some(survivor) = get_card!(Card::Survivor, encounter.hand) {
-            let discard = encounter.hand.iter().filter(|i| i.id != survivor.id).nth(0).unwrap();
-            println!("Playing Survivor, discarding {:?}", discard);
-            encounter.play_by_id(survivor.id, vec![discard.id]);
-        } else {
-            println!("Playing two Defends");
-            let card = get_card!(Card::SilentDefend, encounter.hand).unwrap();
-            encounter.play_by_id(card.id, vec![]);
-
-            let card = get_card!(Card::SilentDefend, encounter.hand).expect("try again");
-            encounter.play_by_id(card.id, vec![]);
+        if encounter.player.health <= 0 {
+            println!("I died");
+            break;
+        } else if encounter.enemies[0].health <= 0 {
+            println!("I won with {} HP remaining", encounter.player.health);
+            break;
         }
+    }
+}
 
-        assert_eq!(3, encounter.hand.len());
+fn respond_to_attack(encounter: &mut Encounter) {
+    let damage = match encounter.enemies[0].intent() {
+        Moves::Attack(dmg) => *dmg,
+        _ => unreachable!()
+    };
 
-        encounter.yield_turn();
+    println!("Need to block {} damage", damage);
 
-        encounter.end_turn();
+    while encounter.player.energy > 0 && encounter.player.block < damage && encounter.hand.len() > 0 {
+        if let Some(survivor) = get_card!(Card::Survivor, encounter.hand) {
+            if let Some(to_discard) = encounter.hand.iter().filter(|i| i.id != survivor.id).nth(0) {
+                println!("Playing Survivor and discarding {:?}", to_discard);
+                encounter.play_by_id(survivor.id, vec![to_discard.id]);
+            } else {
+                println!("Can't play survivor because I have nothing to discard");
+                break;
+            }
+        } else if let Some(defend) = get_card!(Card::SilentDefend, encounter.hand) {
+            println!("Playing a Defend");
+            encounter.play_by_id(defend.id, vec![]);
+        } else {
+            break;
+        }
+    }
+
+    general_response(encounter);
+}
+
+fn general_response(encounter: &mut Encounter) {
+    while encounter.player.energy > 0 && encounter.hand.len() > 0 {
+        if let Some(attack) = get_card!(Card::SilentStrike, encounter.hand) {
+            println!("Playing an Attack");
+            encounter.play_by_id_with_target(attack.id, encounter.enemies[0].id);
+        } else if let Some(neutralize) = get_card!(Card::Neutralize, encounter.hand) {
+            println!("Playing Neutralize");
+            encounter.play_by_id_with_target(neutralize.id, encounter.enemies[0].id);
+        } else {
+            println!("Nothing else to do");
+            break;
+        }
     }
 }
