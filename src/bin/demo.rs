@@ -60,8 +60,8 @@ fn respond_to_attack(encounter: &mut Encounter) {
                 println!("Playing Survivor and discarding {:?}", to_discard);
                 encounter.play_by_id(survivor.id, vec![to_discard.id]);
             } else {
-                println!("Can't play survivor because I have nothing to discard");
-                break;
+                println!("Playing Survivor without discarding");
+                encounter.play_by_id(survivor.id, vec![]);
             }
         } else if let Some(defend) = get_card!(Card::SilentDefend, encounter.hand) {
             println!("Playing a Defend");
