@@ -11,6 +11,12 @@ pub struct Player {
     pub effects: Vec<Effect>
 }
 
+impl Effectable for Player {
+    fn get_effects(&self) -> &Vec<Effect> {
+        &self.effects
+    }
+}
+
 pub struct Encounter<'a> {
     pub run: &'a Run,
     pub player: Player,
@@ -84,6 +90,8 @@ impl<'a> Encounter<'a> {
     }
 
     pub fn end_turn(&mut self) {
+        // TODO: time-based effect ticks
+
         self.player.energy = 3;
         self.player.block = 0;
     }
@@ -152,8 +160,9 @@ impl<'a> Encounter<'a> {
         for result in card.play_on(self,&self.enemies[e]) {
             match result {
                 TargetedPlayResult::BlockableDamage(d) => {
-                    Self::resolve_attack(&mut self.enemies[e], d);
+                    Self::resolve_attack(&mut self.enemies[e], Self::query_attack_damage(&self.player, d));
                 },
+                // TODO: effect stacking
                 TargetedPlayResult::Buff(x) => self.player.effects.push(x),
                 TargetedPlayResult::Debuff(x) => self.enemies[e].effects.push(x)
             }
