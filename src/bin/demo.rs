@@ -56,7 +56,13 @@ fn respond_to_attack(encounter: &mut Encounter) {
 
     while encounter.player.energy > 0 && encounter.player.block < damage && encounter.hand.len() > 0 {
         if let Some(survivor) = get_card!(Card::Survivor, encounter.hand) {
-            if let Some(to_discard) = encounter.hand.iter().filter(|i| i.id != survivor.id).nth(0) {
+            // try not to discard Neutralize
+            let mut best_discard: Vec<&CardInstance> = encounter.hand.iter()
+                .filter(|i| i.id != survivor.id)
+                .collect();
+            best_discard.sort_by(|c1, c2| c2.cost.cmp(&c1.cost));
+
+            if let Some(to_discard) = best_discard.first() {
                 println!("Playing Survivor and discarding {:?}", to_discard);
                 encounter.play_by_id(survivor.id, vec![to_discard.id]);
             } else {
