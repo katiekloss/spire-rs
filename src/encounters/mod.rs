@@ -65,7 +65,11 @@ impl<'a> Encounter<'a> {
             draw_size = 5;
         }
 
-        let hand_size = min(draw_size, self.draw_pile.len() + self.discard_pile.len());
+        self.draw(draw_size);
+    }
+
+    fn draw(&mut self, draw_size: usize) {
+            let hand_size = min(draw_size, self.draw_pile.len() + self.discard_pile.len());
         
         'hand: for _ in 0..hand_size {
             let card = match self.draw_pile.pop() {
@@ -136,6 +140,9 @@ impl<'a> Encounter<'a> {
                     for enemy in self.enemies.iter_mut() {
                         Self::resolve_attack(enemy, d);
                     }
+                },
+                SelfPlayResult::Draw(n) => {
+                    self.draw(n);
                 }
             }
         }
