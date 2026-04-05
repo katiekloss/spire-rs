@@ -26,8 +26,8 @@ fn main() {
         println!("Starting turn {}", encounter.turn);
         println!("Drew: {:?}", encounter.hand);
 
-        match encounter.enemies[0].intent() {
-            spire_rs::monsters::Moves::Attack(dmg) => respond_to_attack(&mut encounter),
+        match encounter.get_enemy_intent(&encounter.enemies[0]) {
+            spire_rs::monsters::Moves::Attack(_) => respond_to_attack(&mut encounter),
             _ => general_response(&mut encounter),
         };
 
@@ -47,8 +47,8 @@ fn main() {
 }
 
 fn respond_to_attack(encounter: &mut Encounter) {
-    let damage = match encounter.enemies[0].intent() {
-        Moves::Attack(dmg) => *dmg,
+    let damage = match encounter.get_enemy_intent(&encounter.enemies[0]) {
+        Moves::Attack(dmg) => dmg,
         _ => unreachable!()
     };
 

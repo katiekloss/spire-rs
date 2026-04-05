@@ -248,6 +248,17 @@ impl<'a> Encounter<'a> {
             target.set_health(target.get_health() - damage);
         }
     }
+
+    // I dislike this but the player needs a way to see the
+    // effective attack damage without doing it themselves.
+    pub fn get_enemy_intent(&self, enemy: &Enemy) -> Moves {
+        match &enemy.moves[enemy.move_idx] {
+            Moves::Attack(dmg) => {
+                Moves::Attack(Self::query_attack_damage(enemy, *dmg))
+            }
+            x => x.clone()
+        }
+    }
 }
 
 impl Damageable for Player {

@@ -54,10 +54,6 @@ impl Enemy {
             move_idx: 0,
         }
     }
-
-    pub fn intent(&self) -> &Moves {
-        &self.moves[self.move_idx]
-    }
 }
 
 impl PartialEq for Enemy {
