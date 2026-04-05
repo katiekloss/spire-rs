@@ -3,7 +3,7 @@ mod card_tests {
     use spire_rs::{Run, cards::{Card, CardInstance}, encounters::Encounter, get_card, map::MapGenerator, monsters::{Enemy, Monsters}};
 
     fn start_run() -> Run {
-        let mut run = Run {
+        let run = Run {
             deck: vec![],
             floor: 1,
             gold: 0,
@@ -24,13 +24,12 @@ mod card_tests {
         encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
 
         encounter.begin_turn();
-        encounter.play_by_id(get_card!(Card::Survivor, encounter.hand).unwrap().id, vec![get_card!(Card::FlickFlack, encounter.hand).unwrap().id]);
+        encounter.play_by_id(get_card!(Card::Survivor, encounter.hand).unwrap().id, vec![get_card!(Card::FlickFlack, encounter.hand).unwrap().id], &mut vec![]);
 
         assert_eq!(encounter.hand.len(), 0);
         assert_eq!(encounter.discard_pile.len(), 2);
         assert_eq!(encounter.enemies[0].health, 48);
 
-        // see encounter.play_by_id
-        //assert_eq!(encounter.player.energy, 2);
+        assert_eq!(encounter.player.energy, 2);
     }
 }

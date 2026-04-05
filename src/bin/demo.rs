@@ -76,14 +76,14 @@ fn respond_to_attack(encounter: &mut Encounter) {
 
             if let Some(to_discard) = best_discard.first() {
                 debug!("Playing Survivor and discarding {:?}", to_discard);
-                encounter.play_by_id(survivor.id, vec![to_discard.id]);
+                encounter.play_by_id(survivor.id, vec![to_discard.id], &mut vec![]);
             } else {
                 debug!("Playing Survivor without discarding");
-                encounter.play_by_id(survivor.id, vec![]);
+                encounter.play_by_id(survivor.id, vec![], &mut vec![]);
             }
         } else if let Some(defend) = get_card!(Card::SilentDefend, encounter.hand) {
             debug!("Playing a Defend");
-            encounter.play_by_id(defend.id, vec![]);
+            encounter.play_by_id(defend.id, vec![], &mut vec![]);
         } else {
             break;
         }

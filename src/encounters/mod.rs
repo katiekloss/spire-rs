@@ -96,13 +96,14 @@ impl<'a> Encounter<'a> {
         self.player.block = 0;
     }
 
-    pub fn play_by_id(&mut self, card: u32, other_cards: Vec<u32>) {
+    pub fn play_by_id(&mut self, card: u32, other_cards: Vec<u32>, stack: &mut Vec<&SelfPlayResult>) {
         let mut card = self.hand.swap_remove(self.find_card_in_hand(card));
 
-        // this needs to consider Sly cards and cards like Flatten (Necrobinder) which have variable cost
-        // depending on previously-played cards. Maybe just maintain a list of played cards per turn
-        // and have a query function like we do for amplifying attack damage
-        self.player.energy -= card.cost;
+        if card.keywords.contains(&Keywords::Sly) && stack.len() > 0 && let SelfPlayResult::Discard(_) = stack[stack.len() - 1] {
+            // can be played for free
+        } else {
+            self.player.energy -= card.cost;
+        }
 
         for result in card.play(self) {
             match result {
@@ -122,7 +123,10 @@ impl<'a> Encounter<'a> {
                         let card = &self.hand[i];
 
                         if card.keywords.contains(&Keywords::Sly) {
-                            self.play_by_id(card.id, vec![]);
+                            let mut stack = stack.clone();
+                            stack.push(&result);
+                            self.play_by_id(card.id, vec![], &mut stack);
+                            stack.pop();
                         } else {
                             self.discard_pile.push(self.hand.swap_remove(i));
                         }
