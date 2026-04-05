@@ -17,6 +17,18 @@ fn main() {
     run.deck.push(CardInstance::new(Card::Survivor));
     run.deck.push(CardInstance::new(Card::Neutralize));
 
+    let mut ending_health = vec![];
+    for i in 1..100 {
+        let health = run_encounter(&run);
+        println!("Simulation {i} ended with {health} HP");
+        ending_health.push(health);
+    }
+
+    println!("Expecting to walk away with {:.2} health", ending_health.iter().sum::<u32>() as f32 / ending_health.len() as f32);
+    println!("I died {} times", ending_health.iter().filter(|h| **h == 0).count());
+}
+
+fn run_encounter(run: &Run) -> u32 {
     let mut encounter = Encounter::new(&run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
 
@@ -34,15 +46,11 @@ fn main() {
         encounter.yield_turn();
         encounter.end_turn();
 
-        println!("Took {} damage", health - encounter.player.health);
-
-        if encounter.player.health <= 0 {
-            println!("I died");
-            break;
-        } else if encounter.enemies[0].health <= 0 {
-            println!("I won with {} HP remaining", encounter.player.health);
-            break;
+        if encounter.player.health <= 0 || encounter.enemies[0].health <= 0 {
+            return encounter.player.health;
         }
+
+        println!("Took {} damage", health - encounter.player.health);
     }
 }
 
