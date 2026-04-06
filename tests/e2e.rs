@@ -9,7 +9,6 @@ fn hello_world() {
         health: 70,
         gold: 99,
         deck: vec![],
-        current_room: MapGenerator::generate()
     };
 
     for _ in 0..5 {

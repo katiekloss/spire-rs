@@ -14,7 +14,6 @@ pub struct Run {
     pub health: u32,
     pub gold: u32,
     pub deck: Vec<CardInstance>,
-    pub current_room: MapRoom
 }
 
 pub enum EncounterOutcome {

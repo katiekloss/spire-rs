@@ -9,7 +9,6 @@ mod card_tests {
             gold: 0,
             health: 1,
             relics: vec![],
-            current_room: MapGenerator::generate()
         };
 
         run

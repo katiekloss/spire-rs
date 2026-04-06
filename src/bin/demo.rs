@@ -1,5 +1,5 @@
 use log::{debug, info, trace};
-use spire_rs::{Run, cards::{CardInstance, CardType, library::{CARDS, Card}}, encounters::{self, Encounter}, get_card, map::{MapGenerator, RoomType}, monsters::{Enemy, Monsters, Moves}, relics::Relics};
+use spire_rs::{Run, cards::{CardInstance, CardType, library::{CARDS, Card}}, encounters::Encounter, get_card, map::{MapGenerator, MapRoom, RoomType}, monsters::{Enemy, Moves}, relics::Relics};
 use std_logger::Config;
 
 fn main() {
@@ -11,7 +11,6 @@ fn main() {
         health: 70,
         gold: 99,
         deck: vec![],
-        current_room: MapGenerator::generate(),
     };
 
     for _ in 0..5 {
@@ -29,7 +28,7 @@ fn main() {
         info!("Running simulations for {:?}", card);
         for i in 1..500_000 {
             debug!("Starting simulation {i}");
-            let (health, floor) = run_simulation(&run);
+            let (health, floor) = run_simulation(&run, &MapGenerator::generate());
             debug!("Simulation {i} ended on floor {floor} with {health} HP");
             samples.push((health, floor));
         }
@@ -42,9 +41,9 @@ fn main() {
     }
 }
 
-fn run_simulation(run: &Run) -> (u32, u32) {
+fn run_simulation(run: &Run, starting_room: &MapRoom) -> (u32, u32) {
     let mut run = run.clone();
-    let mut next_room = run.current_room.up_nodes.get(0);
+    let mut next_room = starting_room.up_nodes.get(0);
 
     while run.health > 0 && let Some(room) = next_room {
         run.floor += 1;

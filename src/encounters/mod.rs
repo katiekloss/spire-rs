@@ -302,7 +302,6 @@ mod draw_tests {
             gold: 0,
             health: 1,
             relics: vec![],
-            current_room: MapGenerator::generate()
         };
 
         for _ in 0..cards {

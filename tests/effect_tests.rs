@@ -9,7 +9,6 @@ fn start_run() -> Run {
         gold: 0,
         health: 70,
         relics: vec![],
-        current_room: MapGenerator::generate()
     };
 
     run
