@@ -1,6 +1,6 @@
 use crate::Relic;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum Relics {
     RingOfTheSnake
 }

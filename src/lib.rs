@@ -7,6 +7,7 @@ pub mod monsters;
 pub mod encounters;
 pub mod map;
 
+#[derive(Clone)]
 pub struct Run {
     pub floor: u32,
     pub relics: Vec<Relics>,

@@ -15,7 +15,7 @@ static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
     m
 });
 
-#[derive(Hash, PartialEq, Eq)]
+#[derive(Hash, PartialEq, Eq, Clone)]
 pub enum Monsters {
     FuzzyWurmCrawler
 }
