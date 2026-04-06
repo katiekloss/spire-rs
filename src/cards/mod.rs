@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::{Debug}, sync::{LazyLock, Mutex}};
 
 use crate::{Effect, Keywords, encounters::Encounter, monsters::Enemy};
 
-static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
+pub static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
     let mut m = HashMap::new();
     m.insert(Card::Neutralize, CardData{ cost: 0, keywords: vec![], results: CardResults::Targeted(vec![TargetedPlayResult::BlockableDamage(3), TargetedPlayResult::Debuff(Effect::Weak(1))]), typ: CardType::Attack });
     m.insert(Card::SilentStrike, CardData { cost: 1, keywords: vec![], results: CardResults::Targeted(vec![TargetedPlayResult::BlockableDamage(6)]), typ: CardType::Attack });
@@ -10,19 +10,23 @@ static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
     m.insert(Card::Survivor, CardData { cost: 1, keywords: vec![], results: CardResults::PlaysOnSelf(vec![SelfPlayResult::Discard(1), SelfPlayResult::GainBlock(8)]), typ: CardType::Skill });
     m.insert(Card::FlickFlack, CardData { cost: 1, keywords: vec![Keywords::Sly], results: CardResults::PlaysOnSelf(vec![SelfPlayResult::DamageAllOthers(7)]), typ: CardType::Attack });
     m.insert(Card::Acrobatics, CardData { cost: 1, keywords: vec![], results: CardResults::PlaysOnSelf(vec![SelfPlayResult::Draw(3), SelfPlayResult::Discard(1)]), typ: CardType::Skill });
+    m.insert(Card::BladeDance, CardData { cost: 1, keywords: vec![Keywords::Exhaust], results: CardResults::PlaysOnSelf(vec![SelfPlayResult::Materialize(Card::Shiv), SelfPlayResult::Materialize(Card::Shiv), SelfPlayResult::Materialize(Card::Shiv)]), typ: CardType::Skill});
+    m.insert(Card::Shiv, CardData { cost: 0, keywords: vec![Keywords::Exhaust], results: CardResults::Targeted(vec![TargetedPlayResult::BlockableDamage(4)]), typ: CardType::Attack});
     m
 });
 
 static CARD_IDS: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(0));
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 pub enum Card {
     SilentStrike,
     SilentDefend,
     Neutralize,
     Survivor,
     FlickFlack,
-    Acrobatics
+    Acrobatics,
+    BladeDance,
+    Shiv
 }
 
 #[derive(Clone)]
@@ -68,7 +72,8 @@ pub enum SelfPlayResult {
     Discard(u32),
     GainBlock(u32),
     AffectSelf(Effect),
-    AffectAllOthers(Effect)
+    AffectAllOthers(Effect),
+    Materialize(Card)
 }
 
 #[derive(Clone, Copy)]

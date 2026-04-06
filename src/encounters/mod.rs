@@ -100,7 +100,7 @@ impl<'a> Encounter<'a> {
         self.player.block = 0;
     }
 
-    pub fn play_by_id(&mut self, card: u32, other_cards: Vec<u32>, stack: &mut Vec<&SelfPlayResult>) {
+    pub fn play_by_id(&mut self, card: u32, other_cards: Vec<u32>, stack: &Vec<SelfPlayResult>) {
         let mut card = self.hand.swap_remove(self.find_card_in_hand(card));
 
         if card.keywords.contains(&Keywords::Sly) && stack.len() > 0 && let SelfPlayResult::Discard(_) = stack[stack.len() - 1] {
@@ -128,8 +128,8 @@ impl<'a> Encounter<'a> {
 
                         if card.keywords.contains(&Keywords::Sly) {
                             let mut stack = stack.clone();
-                            stack.push(&result);
-                            self.play_by_id(card.id, vec![], &mut stack);
+                            stack.push(result);
+                            self.play_by_id(card.id, vec![], &stack);
                             stack.pop();
                         } else {
                             self.discard_pile.push(self.hand.swap_remove(i));
@@ -143,6 +143,9 @@ impl<'a> Encounter<'a> {
                 },
                 SelfPlayResult::Draw(n) => {
                     self.draw(n);
+                },
+                SelfPlayResult::Materialize(new_card) => {
+                    self.hand.push(CardInstance::new(new_card));
                 }
             }
         }
