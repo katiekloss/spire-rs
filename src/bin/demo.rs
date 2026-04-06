@@ -23,7 +23,7 @@ fn main() {
 
     let mut ending_health = vec![];
     info!("Running simulations");
-    for i in 1..1001 {
+    for i in 1..1_000_000 {
         let health = run_encounter(&run);
         debug!("Simulation {i} ended with {health} HP");
         ending_health.push(health);
