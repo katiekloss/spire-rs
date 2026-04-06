@@ -1,5 +1,5 @@
 #![cfg(test)]
-use spire_rs::{Run, cards::{Card, CardInstance}, encounters::Encounter, get_card, map::MapGenerator, monsters::{Enemy, Monsters}};
+use spire_rs::{Run, cards::{ CardInstance, library::Card}, encounters::Encounter, get_card, map::MapGenerator, monsters::{Enemy, Monsters}};
 
 #[test]
 fn hello_world() {

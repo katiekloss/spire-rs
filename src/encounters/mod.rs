@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use rand::seq::SliceRandom;
 
-use crate::{Damageable, Effect, Effectable, Keywords, Run, Target, Team, cards::{CARDS, CardAction, CardInstance}, monsters::{Enemy, Moves}, relics::Relics};
+use crate::{Damageable, Effect, Effectable, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, library::CARDS}, monsters::{Enemy, Moves}, relics::Relics};
 
 pub struct Player {
     pub energy: u32,
@@ -293,7 +293,7 @@ impl Damageable for Player {
 
 #[cfg(test)]
 mod draw_tests {
-    use crate::{Run, cards::CardInstance, encounters::Encounter, map::MapGenerator};
+    use crate::{Run, cards::{CardInstance, library::Card}, encounters::Encounter, map::MapGenerator};
 
     fn start_run(cards: u32) -> Run {
         let mut run = Run {
@@ -306,7 +306,7 @@ mod draw_tests {
         };
 
         for _ in 0..cards {
-            run.deck.push(CardInstance::new(crate::cards::Card::SilentDefend));
+            run.deck.push(CardInstance::new(Card::SilentDefend));
         }
 
         run

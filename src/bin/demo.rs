@@ -1,5 +1,5 @@
 use log::{debug, info, trace};
-use spire_rs::{Run, cards::{CARDS, Card, CardInstance, CardType}, encounters::Encounter, get_card, map::MapGenerator, monsters::{Enemy, Monsters, Moves}, relics::Relics};
+use spire_rs::{Run, cards::{CardInstance, CardType, library::{CARDS, Card}}, encounters::Encounter, get_card, map::MapGenerator, monsters::{Enemy, Monsters, Moves}, relics::Relics};
 use std_logger::Config;
 
 fn main() {

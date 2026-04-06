@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod card_tests {
-    use spire_rs::{Run, cards::{Card, CardInstance}, encounters::Encounter, get_card, map::MapGenerator, monsters::{Enemy, Monsters}};
+    use spire_rs::{Run, cards::{CardInstance, library::Card}, encounters::Encounter, get_card, map::MapGenerator, monsters::{Enemy, Monsters}};
 
     fn start_run() -> Run {
         let run = Run {
