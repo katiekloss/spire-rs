@@ -111,12 +111,16 @@ impl<'a> Encounter<'a> {
     }
 
     pub fn play(&mut self, card: u32, target_id: u32, other_cards: Vec<u32>, stack: &Vec<CardAction>) {
-        let card = self.hand.swap_remove(self.find_card_in_hand(card));
+        let mut card = self.hand.swap_remove(self.find_card_in_hand(card));
 
         if card.keywords.contains(&Keywords::Sly) && stack.len() > 0 && let CardAction::Discard(_) = stack[stack.len() - 1] {
             // can be played for free
         } else {
             self.player.energy -= card.cost;
+        }
+
+        if let Some(custom) = CARDS[&card.card].custom && let Some(play) = custom.play {
+            play(&mut card, self);
         }
 
         for action in CARDS[&card.card].actions.clone() {
@@ -236,7 +240,7 @@ impl<'a> Encounter<'a> {
         total_damage
     }
 
-    fn resolve_attack<T: Damageable>(target: &mut T, damage: u32) {
+    pub fn resolve_attack<T: Damageable>(target: &mut T, damage: u32) {
         let block = target.get_block();
 
         // split damage into amount blocked vs amount that pierces block
