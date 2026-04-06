@@ -1,8 +1,8 @@
 use std::{collections::HashMap, sync::{LazyLock, Mutex}};
 
-use crate::{Damageable, Effect, Effectable};
+use crate::{Damageable, Effect, Effectable, Target, Team};
 
-static ENEMY_ID: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(0));
+static ENEMY_ID: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(1)); // the player is 0
 static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
     let mut m = HashMap::new();
     m.insert(Monsters::FuzzyWurmCrawler, MonsterData{
@@ -83,5 +83,15 @@ impl Damageable for Enemy {
 impl Effectable for Enemy {
     fn get_effects(&self) -> &Vec<Effect> {
         &self.effects
+    }
+}
+
+impl Target for Enemy {
+    fn get_team(&self) -> crate::Team {
+        Team::Enemy
+    }
+
+    fn get_id(&self) -> u32 {
+        self.id
     }
 }

@@ -1,5 +1,4 @@
 
-
 use crate::{cards::CardInstance, map::MapRoom, relics::Relics};
 
 pub mod cards;
@@ -41,6 +40,16 @@ pub trait Damageable {
 
 pub trait Effectable {
     fn get_effects(&self) -> &Vec<Effect>;
+}
+
+pub trait Target : Damageable + Effectable {
+    fn get_team(&self) -> Team;
+    fn get_id(&self) -> u32;
+}
+
+pub enum Team {
+    Friendly,
+    Enemy
 }
 
 #[derive(Clone, PartialEq)]

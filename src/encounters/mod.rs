@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use rand::seq::SliceRandom;
 
-use crate::{Damageable, Effect, Effectable, Keywords, Run, cards::{CardInstance, SelfPlayResult, TargetedPlayResult}, monsters::{Enemy, Moves}, relics::Relics};
+use crate::{Damageable, Effect, Effectable, Keywords, Run, Target, Team, cards::{CARDS, CardAction, CardInstance}, monsters::{Enemy, Moves}, relics::Relics};
 
 pub struct Player {
     pub energy: u32,
@@ -17,10 +17,20 @@ impl Effectable for Player {
     }
 }
 
+impl Target for Player {
+    fn get_team(&self) -> crate::Team {
+        Team::Friendly
+    }
+
+    fn get_id(&self) -> u32 {
+        0
+    }
+}
+
 pub struct Encounter<'a> {
     pub run: &'a Run,
-    pub player: Player,
 
+    pub player: Player,
     pub draw_pile: Vec<CardInstance>,
     pub hand: Vec<CardInstance>,
     pub discard_pile: Vec<CardInstance>,
@@ -32,22 +42,22 @@ pub struct Encounter<'a> {
 
 impl<'a> Encounter<'a> {
     pub fn new(run: &'a Run) -> Self {
-        let cards = run.deck.clone();
-        
+        let cards = run.deck.clone();            
+
         Self {
             run,
             turn: 0,
             enemies: vec![],
+            draw_pile: vec![],
+            hand: vec![],
+            discard_pile: cards, // will be shuffled at the start of the first turn
+            exhaust_pile: vec![],
             player: Player {
                 health: run.health,
                 effects: vec![],
                 energy: 3,
                 block: 0,
-            },
-            draw_pile: vec![],
-            hand: vec![],
-            discard_pile: cards, // will be shuffled at the start of the first turn
-            exhaust_pile: vec![]
+            }
     }}
     
     pub fn begin_turn(&mut self) {
@@ -100,25 +110,41 @@ impl<'a> Encounter<'a> {
         self.player.block = 0;
     }
 
-    pub fn play_by_id(&mut self, card: u32, other_cards: Vec<u32>, stack: &Vec<SelfPlayResult>) {
-        let mut card = self.hand.swap_remove(self.find_card_in_hand(card));
+    pub fn play(&mut self, card: u32, target_id: u32, other_cards: Vec<u32>, stack: &Vec<CardAction>) {
+        let card = self.hand.swap_remove(self.find_card_in_hand(card));
 
-        if card.keywords.contains(&Keywords::Sly) && stack.len() > 0 && let SelfPlayResult::Discard(_) = stack[stack.len() - 1] {
+        if card.keywords.contains(&Keywords::Sly) && stack.len() > 0 && let CardAction::Discard(_) = stack[stack.len() - 1] {
             // can be played for free
         } else {
             self.player.energy -= card.cost;
         }
 
-        for result in card.play(self) {
-            match result {
-                SelfPlayResult::GainBlock(b) => self.player.block += b,
-                SelfPlayResult::AffectSelf(x) => self.player.effects.push(x),
-                SelfPlayResult::AffectAllOthers(x) => {
+        for action in CARDS[&card.card].actions.clone() {
+            match action {
+                CardAction::BlockableDamage(d) => {
+                    if target_id == 0 {
+                        todo!();
+                    } else {
+                        let enemy = self.enemies.iter_mut().filter(|e| e.id == target_id).nth(0).unwrap();
+                        Self::resolve_attack(enemy, Self::query_attack_damage(&self.player, d));
+                    }
+                },
+                CardAction::GainBlock(b) => self.player.block += b,
+                CardAction::AffectSelf(x) => self.player.effects.push(x),
+                CardAction::AffectAllOthers(x) => {
                     for enemy in self.enemies.iter_mut() {
                         enemy.effects.push(x.clone());
                     }
                 },
-                SelfPlayResult::Discard(_) => {
+                CardAction::Apply(x) => {
+                    if target_id == 0 {
+                        self.player.effects.push(x);
+                    } else {
+                        let enemy = self.enemies.iter_mut().filter(|e| e.id == target_id).nth(0).unwrap();
+                        enemy.effects.push(x);
+                    }
+                },
+                CardAction::Discard(_) => {
                     // if other_cards.len() != n.try_into().unwrap() {
                     //     panic!("Provided {} cards but only {} needs to be discarded", other_cards.len(), n);
                     // }
@@ -128,57 +154,25 @@ impl<'a> Encounter<'a> {
 
                         if card.keywords.contains(&Keywords::Sly) {
                             let mut stack = stack.clone();
-                            stack.push(result);
-                            self.play_by_id(card.id, vec![], &stack);
+                            stack.push(action);
+                            self.play(card.id, target_id, vec![], &stack);
                             stack.pop();
                         } else {
                             self.discard_pile.push(self.hand.swap_remove(i));
                         }
                     }
                 },
-                SelfPlayResult::DamageAllOthers(d) => {
+                CardAction::DamageAllOthers(d) => {
                     for enemy in self.enemies.iter_mut() {
                         Self::resolve_attack(enemy, d);
                     }
                 },
-                SelfPlayResult::Draw(n) => {
+                CardAction::Draw(n) => {
                     self.draw(n);
                 },
-                SelfPlayResult::Materialize(new_card) => {
+                CardAction::Materialize(new_card) => {
                     self.hand.push(CardInstance::new(new_card));
                 }
-            }
-        }
-
-        if card.keywords.contains(&Keywords::Exhaust) {
-            self.exhaust_pile.push(card);
-        } else {
-            self.discard_pile.push(card);
-        }
-    }
-
-    pub fn play_by_id_with_target(&mut self, card: u32, target: u32) {
-        let i = self.find_card_in_hand(card);
-        let e = 'get: {
-            for e in 0..self.enemies.len() {
-                if self.enemies[e].id == target {
-                    break 'get e;
-                }
-            }
-            panic!("Can't find enemy");
-        };
-
-        let card = self.hand.swap_remove(i);
-        self.player.energy -= card.cost;
-
-        for result in card.play_on(self,&self.enemies[e]) {
-            match result {
-                TargetedPlayResult::BlockableDamage(d) => {
-                    Self::resolve_attack(&mut self.enemies[e], Self::query_attack_damage(&self.player, d));
-                },
-                // TODO: effect stacking
-                TargetedPlayResult::Buff(x) => self.player.effects.push(x),
-                TargetedPlayResult::Debuff(x) => self.enemies[e].effects.push(x)
             }
         }
 

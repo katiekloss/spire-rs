@@ -1,17 +1,17 @@
 use std::{collections::HashMap, fmt::{Debug}, sync::{LazyLock, Mutex}};
 
-use crate::{Effect, Keywords, encounters::Encounter, monsters::Enemy};
+use crate::{Effect, Keywords};
 
 pub static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
     let mut m = HashMap::new();
-    m.insert(Card::Neutralize, CardData{ cost: 0, keywords: vec![], results: CardResults::Targeted(vec![TargetedPlayResult::BlockableDamage(3), TargetedPlayResult::Debuff(Effect::Weak(1))]), typ: CardType::Attack });
-    m.insert(Card::SilentStrike, CardData { cost: 1, keywords: vec![], results: CardResults::Targeted(vec![TargetedPlayResult::BlockableDamage(6)]), typ: CardType::Attack });
-    m.insert(Card::SilentDefend, CardData { cost: 1, keywords: vec![], results: CardResults::PlaysOnSelf(vec![SelfPlayResult::GainBlock(5)]), typ: CardType::Skill });
-    m.insert(Card::Survivor, CardData { cost: 1, keywords: vec![], results: CardResults::PlaysOnSelf(vec![SelfPlayResult::Discard(1), SelfPlayResult::GainBlock(8)]), typ: CardType::Skill });
-    m.insert(Card::FlickFlack, CardData { cost: 1, keywords: vec![Keywords::Sly], results: CardResults::PlaysOnSelf(vec![SelfPlayResult::DamageAllOthers(7)]), typ: CardType::Attack });
-    m.insert(Card::Acrobatics, CardData { cost: 1, keywords: vec![], results: CardResults::PlaysOnSelf(vec![SelfPlayResult::Draw(3), SelfPlayResult::Discard(1)]), typ: CardType::Skill });
-    m.insert(Card::BladeDance, CardData { cost: 1, keywords: vec![Keywords::Exhaust], results: CardResults::PlaysOnSelf(vec![SelfPlayResult::Materialize(Card::Shiv), SelfPlayResult::Materialize(Card::Shiv), SelfPlayResult::Materialize(Card::Shiv)]), typ: CardType::Skill});
-    m.insert(Card::Shiv, CardData { cost: 0, keywords: vec![Keywords::Exhaust], results: CardResults::Targeted(vec![TargetedPlayResult::BlockableDamage(4)]), typ: CardType::Attack});
+    m.insert(Card::Neutralize, CardData{ cost: 0, keywords: vec![], actions: vec![CardAction::BlockableDamage(3), CardAction::Apply(Effect::Weak(1))], typ: CardType::Attack });
+    m.insert(Card::SilentStrike, CardData { cost: 1, keywords: vec![], actions: vec![CardAction::BlockableDamage(6)], typ: CardType::Attack });
+    m.insert(Card::SilentDefend, CardData { cost: 1, keywords: vec![], actions: vec![CardAction::GainBlock(5)], typ: CardType::Skill });
+    m.insert(Card::Survivor, CardData { cost: 1, keywords: vec![], actions: vec![CardAction::Discard(1), CardAction::GainBlock(8)], typ: CardType::Skill });
+    m.insert(Card::FlickFlack, CardData { cost: 1, keywords: vec![Keywords::Sly], actions: vec![CardAction::DamageAllOthers(7)], typ: CardType::Attack });
+    m.insert(Card::Acrobatics, CardData { cost: 1, keywords: vec![], actions: vec![CardAction::Draw(3), CardAction::Discard(1)], typ: CardType::Skill });
+    m.insert(Card::BladeDance, CardData { cost: 1, keywords: vec![Keywords::Exhaust], actions: vec![CardAction::Materialize(Card::Shiv), CardAction::Materialize(Card::Shiv), CardAction::Materialize(Card::Shiv)], typ: CardType::Skill});
+    m.insert(Card::Shiv, CardData { cost: 0, keywords: vec![Keywords::Exhaust], actions: vec![CardAction::BlockableDamage(4)], typ: CardType::Attack});
     m
 });
 
@@ -29,12 +29,6 @@ pub enum Card {
     Shiv
 }
 
-#[derive(Clone)]
-pub enum CardResults {
-    PlaysOnSelf(Vec<SelfPlayResult>),
-    Targeted(Vec<TargetedPlayResult>)
-}
-
 pub enum CardType {
     Skill,
     Power,
@@ -44,7 +38,7 @@ pub enum CardType {
 
 pub struct CardData {
     pub typ: CardType,
-    pub results: CardResults,
+    pub actions: Vec<CardAction>,
     pub keywords: Vec<Keywords>,
     pub cost: u32,
     // secondary_cost: u8 // regent
@@ -66,21 +60,16 @@ impl Debug for CardInstance {
 }
 
 #[derive(Clone, Copy)]
-pub enum SelfPlayResult {
+pub enum CardAction {
+    BlockableDamage(u32),
     Draw(usize),
     DamageAllOthers(u32),
     Discard(u32),
     GainBlock(u32),
     AffectSelf(Effect),
     AffectAllOthers(Effect),
+    Apply(Effect),
     Materialize(Card)
-}
-
-#[derive(Clone, Copy)]
-pub enum TargetedPlayResult {
-    BlockableDamage(u32),
-    Buff(Effect),
-    Debuff(Effect)
 }
 
 impl CardInstance {
@@ -90,21 +79,6 @@ impl CardInstance {
             cost: CARDS[&card].cost,
             keywords: CARDS[&card].keywords.clone(),
             card,
-        }
-    }
-
-    // keeping these separate because I feel like they'll eventually be more complicated
-    pub fn play(&mut self, _encounter: &Encounter) -> Vec<SelfPlayResult> {
-        match &CARDS[&self.card].results {
-            CardResults::PlaysOnSelf(results) => results.clone(),
-            _ => panic!()
-        }
-    }
-
-    pub fn play_on(&self, _encounter: &Encounter, _target: &Enemy) -> Vec<TargetedPlayResult> {
-        match &CARDS[&self.card].results {
-            CardResults::Targeted(results) => results.clone(),
-            _ => panic!()
         }
     }
 }

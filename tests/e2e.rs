@@ -33,7 +33,7 @@ fn hello_world() {
         assert_eq!(encounter.player.energy, 3);
 
         let card = get_card!(Card::SilentDefend, encounter.hand).unwrap();
-        encounter.play_by_id(card.id, vec![], &mut vec![]);
+        encounter.play(card.id, 0, vec![], &mut vec![]);
 
         assert_eq!(encounter.hand.len(), 6);
         assert_eq!(encounter.player.energy, 2);
@@ -52,10 +52,10 @@ fn hello_world() {
         assert_eq!(encounter.player.energy, 3);
 
         let card = get_card!(Card::SilentStrike, encounter.hand).unwrap();
-        encounter.play_by_id_with_target(card.id, encounter.enemies[0].id);
+        encounter.play(card.id, encounter.enemies[0].id, vec![], &vec![]);
 
         let card = get_card!(Card::SilentDefend, encounter.hand).unwrap();
-        encounter.play_by_id(card.id, vec![], &mut vec![]);
+        encounter.play(card.id, 0, vec![], &mut vec![]);
 
         assert_eq!(encounter.player.block, 5);
         assert_eq!(encounter.player.energy, 1);
@@ -73,7 +73,7 @@ fn hello_world() {
         println!("Turn {}: {:?}", encounter.turn, encounter.hand);
 
         let card = get_card!(Card::SilentStrike, encounter.hand).unwrap();
-        encounter.play_by_id_with_target(card.id, encounter.enemies[0].id);
+        encounter.play(card.id, encounter.enemies[0].id, vec![], &vec![]);
 
         assert_eq!(encounter.enemies[0].health, 43);
 
@@ -90,14 +90,14 @@ fn hello_world() {
         if let Some(survivor) = get_card!(Card::Survivor, encounter.hand) {
             let discard = encounter.hand.iter().filter(|i| i.id != survivor.id).nth(0).unwrap();
             println!("Playing Survivor, discarding {:?}", discard);
-            encounter.play_by_id(survivor.id, vec![discard.id], &mut vec![]);
+            encounter.play(survivor.id, 0, vec![discard.id], &mut vec![]);
         } else {
             println!("Playing two Defends");
             let card = get_card!(Card::SilentDefend, encounter.hand).unwrap();
-            encounter.play_by_id(card.id, vec![], &mut vec![]);
+            encounter.play(card.id, 0, vec![], &mut vec![]);
 
             let card = get_card!(Card::SilentDefend, encounter.hand).expect("try again");
-            encounter.play_by_id(card.id, vec![], &mut vec![]);
+            encounter.play(card.id, 0, vec![], &mut vec![]);
         }
 
         assert_eq!(3, encounter.hand.len());

@@ -1,5 +1,5 @@
 use log::{debug, info, trace};
-use spire_rs::{Run, cards::{Card, CardInstance}, encounters::Encounter, get_card, map::MapGenerator, monsters::{Enemy, Monsters, Moves}, relics::Relics};
+use spire_rs::{Run, cards::{CARDS, Card, CardInstance, CardType}, encounters::Encounter, get_card, map::MapGenerator, monsters::{Enemy, Monsters, Moves}, relics::Relics};
 use std_logger::Config;
 
 fn main() {
@@ -22,9 +22,10 @@ fn main() {
     run.deck.push(CardInstance::new(Card::Neutralize));
 
     let mut ending_health = vec![];
-    for i in 1..100 {
+    info!("Running simulations");
+    for i in 1..1001 {
         let health = run_encounter(&run);
-        info!("Simulation {i} ended with {health} HP");
+        debug!("Simulation {i} ended with {health} HP");
         ending_health.push(health);
     }
 
@@ -76,14 +77,14 @@ fn respond_to_attack(encounter: &mut Encounter) {
 
             if let Some(to_discard) = best_discard.first() {
                 debug!("Playing Survivor and discarding {:?}", to_discard);
-                encounter.play_by_id(survivor.id, vec![to_discard.id], &mut vec![]);
+                encounter.play(survivor.id, 0, vec![to_discard.id], &mut vec![]);
             } else {
                 debug!("Playing Survivor without discarding");
-                encounter.play_by_id(survivor.id, vec![], &mut vec![]);
+                encounter.play(survivor.id, 0, vec![], &mut vec![]);
             }
         } else if let Some(defend) = get_card!(Card::SilentDefend, encounter.hand) {
             debug!("Playing a Defend");
-            encounter.play_by_id(defend.id, vec![], &mut vec![]);
+            encounter.play(defend.id, 0, vec![], &mut vec![]);
         } else {
             break;
         }
@@ -94,15 +95,11 @@ fn respond_to_attack(encounter: &mut Encounter) {
 
 fn general_response(encounter: &mut Encounter) {
     while encounter.player.energy > 0 && encounter.hand.len() > 0 {
-        if let Some(attack) = get_card!(Card::SilentStrike, encounter.hand) {
-            debug!("Playing an Attack");
-            encounter.play_by_id_with_target(attack.id, encounter.enemies[0].id);
-        } else if let Some(neutralize) = get_card!(Card::Neutralize, encounter.hand) {
-            debug!("Playing Neutralize");
-            encounter.play_by_id_with_target(neutralize.id, encounter.enemies[0].id);
-        } else {
-            trace!("Nothing else to do");
-            break;
-        }
+        encounter.hand.sort_by(|c1, c2| c1.cost.cmp(&c2.cost));
+        debug!("Playing {:?}", encounter.hand[0].card);
+        match &CARDS[&encounter.hand[0].card].typ {
+            CardType::Attack => encounter.play(encounter.hand[0].id, encounter.enemies[0].id, vec![], &vec![]),
+            _ => encounter.play(encounter.hand[0].id, 0, vec![], &vec![]),
+        };
     }
 }

@@ -24,7 +24,7 @@ mod card_tests {
         encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
 
         encounter.begin_turn();
-        encounter.play_by_id(get_card!(Card::Survivor, encounter.hand).unwrap().id, vec![get_card!(Card::FlickFlack, encounter.hand).unwrap().id], &mut vec![]);
+        encounter.play(get_card!(Card::Survivor, encounter.hand).unwrap().id, 0, vec![get_card!(Card::FlickFlack, encounter.hand).unwrap().id], &mut vec![]);
 
         assert_eq!(encounter.hand.len(), 0);
         assert_eq!(encounter.discard_pile.len(), 2);
@@ -57,7 +57,7 @@ mod card_tests {
             encounter.end_turn();
         };
 
-        encounter.play_by_id(acrobatics.id, vec![], &mut vec![]);
+        encounter.play(acrobatics.id, 0, vec![], &mut vec![]);
         assert_eq!(encounter.hand.len(), 7);
     }
 }
