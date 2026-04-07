@@ -26,7 +26,7 @@ fn main() {
 
         let mut samples = vec![];
         info!("Running simulations for {:?}", card);
-        for i in 1..500_000 {
+        for i in 1..100_000 {
             debug!("Starting simulation {i}");
             let (health, floor) = run_simulation(&run, &MapGenerator::generate());
             debug!("Simulation {i} ended on floor {floor} with {health} HP");
@@ -79,7 +79,13 @@ fn run_encounter(mut encounter: Encounter) -> u32 {
         debug!("Starting turn {}", encounter.turn);
         debug!("Drew: {:?}", encounter.hand);
 
-        match encounter.get_enemy_intent(&encounter.enemies[0]) {
+        let next_enemy = encounter.enemies.iter().filter(|e| e.health > 0).nth(0);
+        if let None = next_enemy {
+            return encounter.player.health;
+        }
+        let next_enemy = next_enemy.unwrap();
+
+        match encounter.get_enemy_intent(next_enemy) {
             spire_rs::monsters::Moves::Attack(_) => respond_to_attack(&mut encounter),
             _ => general_response(&mut encounter),
         };
@@ -87,7 +93,7 @@ fn run_encounter(mut encounter: Encounter) -> u32 {
         encounter.yield_turn();
         encounter.end_turn();
 
-        if encounter.player.health <= 0 || encounter.enemies[0].health <= 0 {
+        if encounter.player.health <= 0 || encounter.enemies.iter().map(|e| e.health).sum::<u32>() <= 0 {
             return encounter.player.health;
         }
 
@@ -96,9 +102,16 @@ fn run_encounter(mut encounter: Encounter) -> u32 {
 }
 
 fn respond_to_attack(encounter: &mut Encounter) {
-    let damage = match encounter.get_enemy_intent(&encounter.enemies[0]) {
-        Moves::Attack(dmg) => dmg,
-        _ => unreachable!()
+    let damage = {
+        let mut damage = 0;
+        for enemy in encounter.enemies.iter().filter(|e| e.health > 0) {
+            match encounter.get_enemy_intent(enemy) {
+                Moves::Attack(dmg) => damage += dmg,
+                _ => {}
+            };
+        }
+
+        damage
     };
 
     trace!("Need to block {} damage", damage);
@@ -137,6 +150,11 @@ fn respond_to_attack(encounter: &mut Encounter) {
 
 fn general_response(encounter: &mut Encounter) {
     while encounter.player.energy > 0 && encounter.hand.len() > 0 {
+        let enemy= encounter.enemies.iter().filter(|e| e.health > 0).nth(0);
+        if enemy.is_none() {
+            break;
+        }
+
         let blade_dance = get_card!(Card::BladeDance, encounter.hand);
         if let Some(card) = blade_dance {
             debug!("Playing {:?}", card);
@@ -147,7 +165,7 @@ fn general_response(encounter: &mut Encounter) {
         encounter.hand.sort_by(|c1, c2| c1.cost.cmp(&c2.cost));
         debug!("Playing {:?}", encounter.hand[0].card);
         match &CARDS[&encounter.hand[0].card].typ {
-            CardType::Attack => encounter.play(encounter.hand[0].id, encounter.enemies[0].id, vec![], &vec![]),
+            CardType::Attack => encounter.play(encounter.hand[0].id, enemy.unwrap().id, vec![], &vec![]),
             _ => encounter.play(encounter.hand[0].id, 0, vec![], &vec![]),
         };
     }
