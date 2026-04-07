@@ -1,30 +1,62 @@
 use std::{collections::HashMap, sync::{LazyLock, Mutex}};
 
-use crate::{Damageable, Effect, Effectable, Target, Team};
+use crate::{Damageable, Effect, Effectable, Target, Team, cards::library::Card};
 
 static ENEMY_ID: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(1)); // the player is 0
 static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
     let mut m = HashMap::new();
-    m.insert(Monsters::FuzzyWurmCrawler, MonsterData{
+    m.insert(Monsters::FuzzyWurmCrawler, MonsterData {
         health: 55,
         moves: vec![
             Moves::Attack(4),
             Moves::Attack(4),
             Moves::Buff(Effect::Strength(7))]
-        });
+    });
+    m.insert(Monsters::SmallLeafSlime, MonsterData {
+        health: 11,
+        moves: vec![
+            Moves::Attack(3),
+            Moves::StatusCard(Card::Slimed)
+        ]
+    });
+    m.insert(Monsters::MediumLeafSlime, MonsterData {
+        health: 32,
+        moves: vec![
+            Moves::Attack(8),
+            Moves::StatusCard(Card::Slimed)
+        ]
+    });
+    m.insert(Monsters::SmallTwigSlime, MonsterData {
+        health: 7,
+        moves: vec![
+            Moves::Attack(4)
+        ]
+    });
+    m.insert(Monsters::MediumTwigSlime, MonsterData {
+        health: 26,
+        moves: vec![
+            Moves::Attack(11),
+            Moves::StatusCard(Card::Slimed)
+        ]
+    });
     m
 });
 
 #[derive(Hash, PartialEq, Eq, Clone)]
 pub enum Monsters {
-    FuzzyWurmCrawler
+    FuzzyWurmCrawler,
+    SmallLeafSlime,
+    MediumLeafSlime,
+    SmallTwigSlime,
+    MediumTwigSlime
 }
 
 #[derive(Clone)]
 pub enum Moves {
     Attack(u32),
     Buff(Effect),
-    Debuff(Effect)
+    Debuff(Effect),
+    StatusCard(Card)
 }
 
 pub struct MonsterData {

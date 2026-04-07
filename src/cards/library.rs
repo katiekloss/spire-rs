@@ -2,7 +2,6 @@ use std::{collections::HashMap, sync::LazyLock};
 
 use crate::{Effect, Keywords, cards::{CardAction, CardData, CardType, custom::*}};
 
-
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 pub enum Card {
     SilentStrike,
@@ -13,7 +12,8 @@ pub enum Card {
     Acrobatics,
     BladeDance,
     Shiv,
-    Ricochet
+    Ricochet,
+    Slimed
 }
 
 pub static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
@@ -27,5 +27,6 @@ pub static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
     m.insert(Card::BladeDance, CardData { cost: 1, keywords: vec![Keywords::Exhaust], actions: vec![CardAction::Materialize(Card::Shiv), CardAction::Materialize(Card::Shiv), CardAction::Materialize(Card::Shiv)], typ: CardType::Skill, custom: None });
     m.insert(Card::Shiv, CardData { cost: 0, keywords: vec![Keywords::Exhaust], actions: vec![CardAction::BlockableDamage(4)], typ: CardType::Attack, custom: None });
     m.insert(Card::Ricochet, CardData { cost: 2, keywords: vec![Keywords::Sly], actions: vec![], typ: CardType::Attack, custom: Some(&RICOCHET) });
+    m.insert(Card::Slimed, CardData { cost: 1, keywords: vec![Keywords::Exhaust], actions: vec![CardAction::Draw(1)], typ: CardType::Status, custom: None });
     m
 });

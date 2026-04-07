@@ -29,7 +29,7 @@ impl MapGenerator {
                     t: RoomType::Encounter(vec![Monsters::FuzzyWurmCrawler]),
                     up_nodes: vec![
                         MapRoom {
-                            t: RoomType::Encounter(vec![Monsters::FuzzyWurmCrawler]),
+                            t: RoomType::Encounter(vec![Monsters::SmallLeafSlime, Monsters::MediumLeafSlime, Monsters::SmallTwigSlime, Monsters::MediumTwigSlime]),
                             up_nodes: vec![
                                 MapRoom {
                                     t: RoomType::Encounter(vec![Monsters::FuzzyWurmCrawler]),

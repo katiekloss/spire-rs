@@ -210,11 +210,10 @@ impl<'a> Encounter<'a> {
     }
 
     fn resolve_enemies(&mut self) {
-        // will need to be mutable for thorns
-        for enemy in self.enemies.iter_mut() {
-            match &enemy.moves[enemy.move_idx] {
+        for enemy in self.enemies.iter_mut().filter(|e| e.health > 0) {
+            match enemy.moves[enemy.move_idx] {
                 Moves::Attack(dmg) => {
-                    let dmg = Self::query_attack_damage(enemy, *dmg);
+                    let dmg = Self::query_attack_damage(enemy, dmg);
                     Self::resolve_attack(&mut self.player, dmg);
                 },
                 Moves::Buff(effect) => {
@@ -222,6 +221,9 @@ impl<'a> Encounter<'a> {
                 },
                 Moves::Debuff(effect) => {
                     self.player.effects.push(effect.clone());
+                },
+                Moves::StatusCard(card) => {
+                    self.draw_pile.push(CardInstance::new(card));
                 }
             }
 
@@ -293,7 +295,7 @@ impl Damageable for Player {
 
 #[cfg(test)]
 mod draw_tests {
-    use crate::{Run, cards::{CardInstance, library::Card}, encounters::Encounter, map::MapGenerator};
+    use crate::{Run, cards::{CardInstance, library::Card}, encounters::Encounter};
 
     fn start_run(cards: u32) -> Run {
         let mut run = Run {
