@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use spire_rs::{Run, cards::{CardInstance, library::Card}, encounters::Encounter, get_card, map::MapGenerator, monsters::{Enemy, Monsters}};
+use spire_rs::{Effect, Run, cards::{CardInstance, library::Card}, encounters::Encounter, get_card, monsters::{Enemy, Monsters}};
 
 fn start_run() -> Run {
     let run = Run {
@@ -54,4 +54,23 @@ pub fn applying_weak_reduces_damage() {
     encounter.enemies[0].effects.push(spire_rs::Effect::Weak(1));
     encounter.yield_turn();
     assert_eq!(encounter.player.health, 67);
+}
+
+#[test]
+pub fn applying_territorial_applies_strength() {
+    let run = start_run();
+    let mut encounter = Encounter::new(&run);
+    encounter.enemies.push(Enemy::new(Monsters::Byrdonis));
+    
+    encounter.begin_turn();
+    encounter.yield_turn();
+    encounter.end_turn();
+
+    assert_eq!(encounter.enemies[0].effects.iter().filter(|fx| **fx == Effect::Strength(1)).count(), 1);
+
+    encounter.begin_turn();
+    encounter.yield_turn();
+    encounter.end_turn();
+
+    assert_eq!(encounter.enemies[0].effects.iter().filter(|fx| **fx == Effect::Strength(1)).count(), 2);
 }

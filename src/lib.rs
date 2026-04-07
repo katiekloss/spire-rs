@@ -1,5 +1,5 @@
 
-use crate::{cards::CardInstance, map::MapRoom, relics::Relics};
+use crate::{cards::CardInstance, relics::Relics};
 
 pub mod cards;
 pub mod relics;
@@ -21,10 +21,11 @@ pub enum EncounterOutcome {
     Dead
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum Effect {
     Strength(u32),
-    Weak(u8)
+    Weak(u32),
+    Territorial(u32)
 }
 
 pub trait Relic {

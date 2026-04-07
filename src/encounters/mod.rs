@@ -104,7 +104,15 @@ impl<'a> Encounter<'a> {
     }
 
     pub fn end_turn(&mut self) {
-        // TODO: time-based effect ticks
+        for enemy in self.enemies.iter_mut() {
+            let effects = enemy.effects.clone(); // boooooooooooooooooooooo do better
+            for effect in effects {
+                match effect {
+                    Effect::Territorial(str) => enemy.effects.push(Effect::Strength(str)),
+                    _ => {}
+                }
+            }
+        }
 
         self.player.energy = 3;
         self.player.block = 0;
@@ -238,7 +246,8 @@ impl<'a> Encounter<'a> {
         for effect in source.get_effects() {
             match effect {
                 Effect::Strength(s) => total_damage += s,
-                Effect::Weak(_) => total_damage = ((base_damage as f32) * 0.75).floor() as u32
+                Effect::Weak(_) => total_damage = ((base_damage as f32) * 0.75).floor() as u32,
+                _ => {}
             }
         }
         total_damage

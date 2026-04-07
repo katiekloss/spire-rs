@@ -1,4 +1,4 @@
-use crate::monsters::Monsters;
+use crate::{monsters::Monsters, relics::Relics};
 
 #[derive(Clone)]
 pub struct MapRoom {
@@ -9,7 +9,10 @@ pub struct MapRoom {
 #[derive(Clone)]
 pub enum RoomType {
     Ancient(Ancients),
-    Encounter(Vec<Monsters>)
+    Encounter(Vec<Monsters>),
+    Treasure(Relics, u32),
+    Elite(Vec<Monsters>),
+    Rest
 }
 
 #[derive(Clone)]
@@ -32,23 +35,15 @@ impl MapGenerator {
                             t: RoomType::Encounter(vec![Monsters::SmallLeafSlime, Monsters::MediumLeafSlime, Monsters::SmallTwigSlime, Monsters::MediumTwigSlime]),
                             up_nodes: vec![
                                 MapRoom {
-                                    t: RoomType::Encounter(vec![Monsters::FuzzyWurmCrawler]),
+                                    t: RoomType::Encounter(vec![Monsters::MediumLeafSlime, Monsters::FuzzyWurmCrawler]),
                                     up_nodes: vec![
                                         MapRoom {
-                                            t: RoomType::Encounter(vec![Monsters::FuzzyWurmCrawler]),
+                                            t: RoomType::Treasure(Relics::RingOfTheSnake, 15),
                                             up_nodes: vec![
                                                 MapRoom {
-                                                    t: RoomType::Encounter(vec![Monsters::FuzzyWurmCrawler]),
-                                                    up_nodes: vec![
-                                                        MapRoom {
-                                                            t: RoomType::Encounter(vec![Monsters::FuzzyWurmCrawler]),
-                                                            up_nodes: vec![
-                                                                MapRoom {
-                                                                    t: RoomType::Encounter(vec![Monsters::FuzzyWurmCrawler]),
-                                                                    up_nodes: vec![]
-                                                        }]
+                                                    t: RoomType::Elite(vec![Monsters::Byrdonis]),
+                                                    up_nodes: vec![]
                                                 }]
-                                            }]
                                         }
                                     ]
                                 }
@@ -56,6 +51,7 @@ impl MapGenerator {
                         }
                     ]
                 },
-        ] }
+            ]
+        }
     }
 }

@@ -28,7 +28,7 @@ fn main() {
         info!("Running simulations for {:?}", card);
         for i in 1..100_000 {
             debug!("Starting simulation {i}");
-            let (health, floor) = run_simulation(&run, &MapGenerator::generate());
+            let (health, floor) = run_simulation(&mut run, &MapGenerator::generate());
             debug!("Simulation {i} ended on floor {floor} with {health} HP");
             samples.push((health, floor));
         }
@@ -41,7 +41,7 @@ fn main() {
     }
 }
 
-fn run_simulation(run: &Run, starting_room: &MapRoom) -> (u32, u32) {
+fn run_simulation(run: &mut Run, starting_room: &MapRoom) -> (u32, u32) {
     let mut run = run.clone();
     let mut next_room = starting_room.up_nodes.get(0);
 
@@ -50,17 +50,34 @@ fn run_simulation(run: &Run, starting_room: &MapRoom) -> (u32, u32) {
         
         debug!("Moving to floor {}", run.floor);
 
-        let mut encounter = Encounter::new(&run);
+        let mut encounter = None;
         match &room.t {
             RoomType::Encounter(monsters) => {
-                encounter.enemies.append(&mut monsters.iter().map(|m| Enemy::new(m.clone())).collect());
-
-                run.health = run_encounter(encounter);
-                if run.health == 0 {
-                    break;
-                }
+                let mut e = Encounter::new(&run);
+                e.enemies.append(&mut monsters.iter().map(|m| Enemy::new(m.clone())).collect());
+                encounter = Some(e);
             },
-            _ => {}
+            RoomType::Elite(monsters) => {
+                let mut e = Encounter::new(&run);
+                e.enemies.append(&mut monsters.iter().map(|m| Enemy::new(m.clone())).collect());
+                encounter = Some(e);
+            },
+            RoomType::Ancient(_ancient) => {
+                
+            }
+            RoomType::Treasure(_relic, gold) => {
+                run.gold += gold;
+            }
+            RoomType::Rest => {
+                run.health += 15;
+            }
+        };
+
+        if let Some(encounter) = encounter {
+            run.health = run_encounter(encounter);
+            if run.health == 0 {
+                break;
+            }
         }
 
         next_room = room.up_nodes.get(0);

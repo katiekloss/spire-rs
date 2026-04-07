@@ -10,40 +10,48 @@ static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
         moves: vec![
             vec![Moves::Attack(4)],
             vec![Moves::Attack(4)],
-            vec![Moves::Buff(Effect::Strength(7))]]
+            vec![Moves::Buff(Effect::Strength(7))]],
+        starting_effects: vec![]
     });
     m.insert(Monsters::SmallLeafSlime, MonsterData {
         health: 11,
         moves: vec![
             vec![Moves::Attack(3)],
             vec![Moves::StatusCard(Card::Slimed)]
-        ]
+        ],
+        starting_effects: vec![]
     });
     m.insert(Monsters::MediumLeafSlime, MonsterData {
         health: 32,
         moves: vec![
             vec![Moves::Attack(8)],
             vec![Moves::StatusCard(Card::Slimed)]
-        ]
+        ],
+        starting_effects: vec![]
     });
     m.insert(Monsters::SmallTwigSlime, MonsterData {
         health: 7,
         moves: vec![
             vec![Moves::Attack(4)]
-        ]
+        ],
+        starting_effects: vec![]
     });
     m.insert(Monsters::MediumTwigSlime, MonsterData {
         health: 26,
         moves: vec![
             vec![Moves::Attack(11)],
             vec![Moves::StatusCard(Card::Slimed)]
-        ]
+        ],
+        starting_effects: vec![]
     });
     m.insert(Monsters::Byrdonis, MonsterData {
         health: 91,
         moves: vec![
             vec![Moves::Attack(3), Moves::Attack(3), Moves::Attack(3)],
             vec![Moves::Attack(16)]
+        ],
+        starting_effects: vec![
+            Effect::Territorial(1)
         ]
     });
     m
@@ -69,7 +77,8 @@ pub enum Moves {
 
 pub struct MonsterData {
     health: u32,
-    moves: Vec<Vec<Moves>>
+    moves: Vec<Vec<Moves>>,
+    starting_effects: Vec<Effect>
 }
 
 pub struct Enemy {
@@ -88,9 +97,9 @@ impl Enemy {
             id: { let mut i = ENEMY_ID.lock().unwrap(); *i += 1; *i },
             health: MONSTERS[&monster].health,
             moves: MONSTERS[&monster].moves.clone(),
+            effects: MONSTERS[&monster].starting_effects.clone(),
             monster,
             block: 0,
-            effects: vec![],
             move_idx: 0,
         }
     }
