@@ -8,35 +8,42 @@ static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
     m.insert(Monsters::FuzzyWurmCrawler, MonsterData {
         health: 55,
         moves: vec![
-            Moves::Attack(4),
-            Moves::Attack(4),
-            Moves::Buff(Effect::Strength(7))]
+            vec![Moves::Attack(4)],
+            vec![Moves::Attack(4)],
+            vec![Moves::Buff(Effect::Strength(7))]]
     });
     m.insert(Monsters::SmallLeafSlime, MonsterData {
         health: 11,
         moves: vec![
-            Moves::Attack(3),
-            Moves::StatusCard(Card::Slimed)
+            vec![Moves::Attack(3)],
+            vec![Moves::StatusCard(Card::Slimed)]
         ]
     });
     m.insert(Monsters::MediumLeafSlime, MonsterData {
         health: 32,
         moves: vec![
-            Moves::Attack(8),
-            Moves::StatusCard(Card::Slimed)
+            vec![Moves::Attack(8)],
+            vec![Moves::StatusCard(Card::Slimed)]
         ]
     });
     m.insert(Monsters::SmallTwigSlime, MonsterData {
         health: 7,
         moves: vec![
-            Moves::Attack(4)
+            vec![Moves::Attack(4)]
         ]
     });
     m.insert(Monsters::MediumTwigSlime, MonsterData {
         health: 26,
         moves: vec![
-            Moves::Attack(11),
-            Moves::StatusCard(Card::Slimed)
+            vec![Moves::Attack(11)],
+            vec![Moves::StatusCard(Card::Slimed)]
+        ]
+    });
+    m.insert(Monsters::Byrdonis, MonsterData {
+        health: 91,
+        moves: vec![
+            vec![Moves::Attack(3), Moves::Attack(3), Moves::Attack(3)],
+            vec![Moves::Attack(16)]
         ]
     });
     m
@@ -48,7 +55,8 @@ pub enum Monsters {
     SmallLeafSlime,
     MediumLeafSlime,
     SmallTwigSlime,
-    MediumTwigSlime
+    MediumTwigSlime,
+    Byrdonis
 }
 
 #[derive(Clone)]
@@ -61,7 +69,7 @@ pub enum Moves {
 
 pub struct MonsterData {
     health: u32,
-    moves: Vec<Moves>
+    moves: Vec<Vec<Moves>>
 }
 
 pub struct Enemy {
@@ -71,7 +79,7 @@ pub struct Enemy {
     pub block: u32,
     pub effects: Vec<Effect>,
     pub move_idx: usize,
-    pub moves: Vec<Moves>
+    pub moves: Vec<Vec<Moves>>
 }
 
 impl Enemy {

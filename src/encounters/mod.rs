@@ -211,19 +211,21 @@ impl<'a> Encounter<'a> {
 
     fn resolve_enemies(&mut self) {
         for enemy in self.enemies.iter_mut().filter(|e| e.health > 0) {
-            match enemy.moves[enemy.move_idx] {
-                Moves::Attack(dmg) => {
-                    let dmg = Self::query_attack_damage(enemy, dmg);
-                    Self::resolve_attack(&mut self.player, dmg);
-                },
-                Moves::Buff(effect) => {
-                    enemy.effects.push(effect.clone());
-                },
-                Moves::Debuff(effect) => {
-                    self.player.effects.push(effect.clone());
-                },
-                Moves::StatusCard(card) => {
-                    self.draw_pile.push(CardInstance::new(card));
+            for mv in &enemy.moves[enemy.move_idx] {
+                match mv {
+                    Moves::Attack(dmg) => {
+                        let dmg = Self::query_attack_damage(enemy, *dmg);
+                        Self::resolve_attack(&mut self.player, dmg);
+                    },
+                    Moves::Buff(effect) => {
+                        enemy.effects.push(effect.clone());
+                    },
+                    Moves::Debuff(effect) => {
+                        self.player.effects.push(effect.clone());
+                    },
+                    Moves::StatusCard(card) => {
+                        self.draw_pile.push(CardInstance::new(*card));
+                    }
                 }
             }
 
@@ -265,13 +267,17 @@ impl<'a> Encounter<'a> {
 
     // I dislike this but the player needs a way to see the
     // effective attack damage without doing it themselves.
-    pub fn get_enemy_intent(&self, enemy: &Enemy) -> Moves {
-        match &enemy.moves[enemy.move_idx] {
-            Moves::Attack(dmg) => {
-                Moves::Attack(Self::query_attack_damage(enemy, *dmg))
-            }
-            x => x.clone()
-        }
+    pub fn get_enemy_intent(&self, enemy: &Enemy) -> Vec<Moves> {
+        enemy.moves[enemy.move_idx].iter()
+            .map(|mv| {
+                match mv {
+                    Moves::Attack(dmg) => {
+                        Moves::Attack(Self::query_attack_damage(enemy, *dmg))
+                    }
+                    x => x.clone()
+                }
+            })
+            .collect()
     }
 }
 

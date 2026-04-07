@@ -54,15 +54,13 @@ fn run_simulation(run: &Run, starting_room: &MapRoom) -> (u32, u32) {
         match &room.t {
             RoomType::Encounter(monsters) => {
                 encounter.enemies.append(&mut monsters.iter().map(|m| Enemy::new(m.clone())).collect());
-            },
-            _ => {
-                todo!()
-            }
-        }
 
-        run.health = run_encounter(encounter);
-        if run.health == 0 {
-            break;
+                run.health = run_encounter(encounter);
+                if run.health == 0 {
+                    break;
+                }
+            },
+            _ => {}
         }
 
         next_room = room.up_nodes.get(0);
@@ -84,10 +82,20 @@ fn run_encounter(mut encounter: Encounter) -> u32 {
             return encounter.player.health;
         }
         let next_enemy = next_enemy.unwrap();
+        let attack_damage = {
+            let mut d = 0;
+            for i in encounter.get_enemy_intent(next_enemy) {
+                if let Moves::Attack(dmg) = i {
+                    d += dmg;
+                }
+            }
+            d
+        };
 
-        match encounter.get_enemy_intent(next_enemy) {
-            spire_rs::monsters::Moves::Attack(_) => respond_to_attack(&mut encounter),
-            _ => general_response(&mut encounter),
+        if attack_damage > 0 {
+            respond_to_attack(&mut encounter, attack_damage);
+        } else {
+            general_response(&mut encounter);
         };
 
         encounter.yield_turn();
@@ -101,19 +109,7 @@ fn run_encounter(mut encounter: Encounter) -> u32 {
     }
 }
 
-fn respond_to_attack(encounter: &mut Encounter) {
-    let damage = {
-        let mut damage = 0;
-        for enemy in encounter.enemies.iter().filter(|e| e.health > 0) {
-            match encounter.get_enemy_intent(enemy) {
-                Moves::Attack(dmg) => damage += dmg,
-                _ => {}
-            };
-        }
-
-        damage
-    };
-
+fn respond_to_attack(encounter: &mut Encounter, damage: u32) {
     trace!("Need to block {} damage", damage);
 
     while encounter.player.energy > 0 && encounter.player.block < damage && encounter.hand.len() > 0 {
