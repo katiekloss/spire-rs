@@ -13,7 +13,8 @@ pub enum Card {
     BladeDance,
     Shiv,
     Ricochet,
-    Slimed
+    Slimed,
+    DaggerSpray
 }
 
 pub static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
@@ -28,5 +29,6 @@ pub static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
     m.insert(Card::Shiv, CardData { cost: 0, keywords: vec![Keywords::Exhaust], actions: vec![CardAction::BlockableDamage(4)], typ: CardType::Attack, custom: None });
     m.insert(Card::Ricochet, CardData { cost: 2, keywords: vec![Keywords::Sly], actions: vec![], typ: CardType::Attack, custom: Some(&RICOCHET) });
     m.insert(Card::Slimed, CardData { cost: 1, keywords: vec![Keywords::Exhaust], actions: vec![CardAction::Draw(1)], typ: CardType::Status, custom: None });
+    m.insert(Card::DaggerSpray, CardData { cost: 1, keywords: vec![], actions: vec![CardAction::DamageAllOthers(4), CardAction::DamageAllOthers(4)], typ: CardType::Attack, custom: None });
     m
 });
