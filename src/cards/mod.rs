@@ -7,7 +7,7 @@ use crate::{Effect, Keywords, cards::library::{CARDS, Card}, encounters::Encount
 
 static CARD_IDS: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(0));
 
-
+#[derive(Clone)]
 pub enum CardType {
     Skill,
     Power,
@@ -31,7 +31,8 @@ pub struct CardInstance {
     pub cost: u32,
     // secondary_cost: u8 // regent
     pub keywords: Vec<Keywords>,
-    pub custom: Option<&'static CustomCard>
+    pub custom: Option<&'static CustomCard>,
+    pub typ: CardType
 }
 
 impl Debug for CardInstance {
@@ -55,11 +56,13 @@ pub enum CardAction {
 
 impl CardInstance {
     pub fn new(card: Card) -> Self {
+        let def = &CARDS[&card];
         Self {
             id: { let mut i = CARD_IDS.lock().unwrap(); *i += 1; *i },
-            cost: CARDS[&card].cost,
-            keywords: CARDS[&card].keywords.clone(),
-            custom: CARDS[&card].custom,
+            cost: def.cost,
+            keywords: def.keywords.clone(),
+            custom: def.custom,
+            typ: def.typ.clone(),
             card,
         }
     }

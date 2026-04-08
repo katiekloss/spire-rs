@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use rand::seq::SliceRandom;
 
-use crate::{Damageable, Effect, Effectable, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, library::CARDS}, monsters::{Enemy, Moves}, relics::Relics};
+use crate::{Damageable, Effect, Effectable, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, monsters::{Enemy, Moves}, relics::Relics};
 
 pub struct Player {
     pub energy: u32,
@@ -202,7 +202,10 @@ impl<'a> Encounter<'a> {
             }
         }
 
-        if card.keywords.contains(&Keywords::Exhaust) {
+        if let CardType::Power = card.typ {
+            // Powers disappear entirely, instead of discarding or exhausting
+        }
+        else if card.keywords.contains(&Keywords::Exhaust) {
             self.exhaust_pile.push(card);
         } else {
             self.discard_pile.push(card);

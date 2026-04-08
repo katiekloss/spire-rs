@@ -15,5 +15,5 @@ pub static RICOCHET: CustomCard = CustomCard {
             
             Encounter::resolve_attack(alive[rng.random_range(..n)], 3);
         }
-    })
+    }),
 };

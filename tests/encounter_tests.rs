@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use spire_rs::{Run, cards::library::Card, encounters::Encounter, monsters::{Enemy, Monsters}};
+use spire_rs::{Run, cards::{CardInstance, library::Card}, encounters::Encounter, get_card, monsters::{Enemy, Monsters}};
 
 fn start_run() -> Run {
     let run = Run {
@@ -31,4 +31,16 @@ fn multiple_enemies_all_use_their_moves() {
     encounter.yield_turn();
 
     assert_eq!(encounter.draw_pile.iter().filter(|c| c.card == Card::Slimed).count(), 2);
+}
+
+#[test]
+fn power_cards_vanish_on_play() {
+    let mut run = start_run();
+    run.deck.push(CardInstance::new(Card::Afterimage));
+    let mut encounter = Encounter::new(&run);
+    encounter.begin_turn();
+    encounter.play(get_card!(Card::Afterimage, encounter.hand).unwrap().id, 0, vec![], &vec![]);
+
+    assert_eq!(encounter.discard_pile.len(), 0);
+    assert_eq!(encounter.exhaust_pile.len(), 0);
 }
