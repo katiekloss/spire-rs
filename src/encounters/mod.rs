@@ -121,6 +121,20 @@ impl<'a> Encounter<'a> {
     pub fn play(&mut self, card: u32, target_id: u32, other_cards: Vec<u32>, stack: &Vec<CardAction>) {
         let mut card = self.hand.swap_remove(self.find_card_in_hand(card));
 
+        // maybe macro this
+        let card_played = 'get: {
+            for effect in &self.player.effects {
+                if let Effect::Custom(handler) = effect && let Some(card_played) = handler.card_played {
+                    break 'get Some(card_played);
+                }
+            }
+            None
+        };
+
+        if let Some(handler) = card_played {
+            handler(&card, self);
+        }
+
         if card.keywords.contains(&Keywords::Sly) && stack.len() > 0 && let CardAction::Discard(_) = stack[stack.len() - 1] {
             // can be played for free
         } else {

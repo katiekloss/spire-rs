@@ -1,11 +1,12 @@
 
-use crate::{cards::CardInstance, relics::Relics};
+use crate::{cards::CardInstance, powers::PowerImpl, relics::Relics};
 
 pub mod cards;
 pub mod relics;
 pub mod monsters;
 pub mod encounters;
 pub mod map;
+pub mod powers;
 
 #[derive(Clone)]
 pub struct Run {
@@ -25,7 +26,8 @@ pub enum EncounterOutcome {
 pub enum Effect {
     Strength(u32),
     Weak(u32),
-    Territorial(u32)
+    Territorial(u32),
+    Custom(&'static PowerImpl)
 }
 
 pub trait Relic {

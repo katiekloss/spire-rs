@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::LazyLock};
 
-use crate::{Effect, Keywords, cards::{CardAction, CardData, CardType, custom::*}};
+use crate::{Effect, Keywords, cards::{CardAction, CardData, CardType, custom::*}, powers::defs};
 
 #[derive(Eq, PartialEq, Hash, Clone, Copy, Debug)]
 pub enum Card {
@@ -14,7 +14,9 @@ pub enum Card {
     Shiv,
     Ricochet,
     Slimed,
-    DaggerSpray
+    DaggerSpray,
+    CloakAndDagger,
+    Afterimage
 }
 
 pub static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
@@ -30,5 +32,7 @@ pub static CARDS: LazyLock<HashMap<Card, CardData>> = LazyLock::new(|| {
     m.insert(Card::Ricochet, CardData { cost: 2, keywords: vec![Keywords::Sly], actions: vec![], typ: CardType::Attack, custom: Some(&RICOCHET) });
     m.insert(Card::Slimed, CardData { cost: 1, keywords: vec![Keywords::Exhaust], actions: vec![CardAction::Draw(1)], typ: CardType::Status, custom: None });
     m.insert(Card::DaggerSpray, CardData { cost: 1, keywords: vec![], actions: vec![CardAction::DamageAllOthers(4), CardAction::DamageAllOthers(4)], typ: CardType::Attack, custom: None });
+    m.insert(Card::CloakAndDagger, CardData { cost: 1, keywords: vec![], actions: vec![CardAction::GainBlock(6), CardAction::Materialize(Card::Shiv)], typ: CardType::Skill, custom: None });
+    m.insert(Card::Afterimage, CardData { cost: 1, keywords: vec![], actions: vec![CardAction::Apply(Effect::Custom(&defs::AFTERIMAGE))], typ: CardType::Power, custom: None });
     m
 });

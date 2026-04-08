@@ -65,8 +65,9 @@ impl CardInstance {
     }
 }
 
-type PlayHandler = fn(&mut CardInstance, &mut Encounter);
+type PlayHandler = fn(card: &mut CardInstance, encounter: &mut Encounter);
 
 pub struct CustomCard {
-    pub play: Option<PlayHandler> // = None // enable the default_field_values feature when there are more fields and it becomes annoying
+    /// Called whenever an instance of this card is played
+    pub play: Option<PlayHandler>,
 }
