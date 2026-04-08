@@ -20,29 +20,30 @@ fn main() {
     run.deck.push(CardInstance::new(Card::Survivor));
     run.deck.push(CardInstance::new(Card::Neutralize));
 
-    for card in [Card::Acrobatics, Card::BladeDance, Card::Ricochet] {
-        let mut run = run.clone();
-        run.deck.push(CardInstance::new(card));
-
+    for card in [Card::CloakAndDagger, Card::BladeDance, Card::Ricochet, Card::DaggerSpray] {
         let mut samples = vec![];
         info!("Running simulations for {:?}", card);
+        
         for i in 1..100_000 {
+            let mut run = run.clone();
+            run.deck.push(CardInstance::new(card));
+
             debug!("Starting simulation {i}");
             let (health, floor) = run_simulation(&mut run, &MapGenerator::generate());
             debug!("Simulation {i} ended on floor {floor} with {health} HP");
-            samples.push((health, floor));
+            samples.push(run);
         }
 
-        info!("Adding {:?}: expecting {:.2} health on floor {:.2}; {} deaths",
+        info!("Adding {:?}: expecting {:.2} health on floor {:.2} with {:.2} gold; {} deaths",
             card,
-            samples.iter().map(|s| s.0).sum::<u32>() as f32 / samples.len() as f32,
-            samples.iter().map(|s| s.1).sum::<u32>() as f32 / samples.len() as f32,
-            samples.iter().filter(|h| h.0 == 0).count());
+            samples.iter().map(|r| r.health).sum::<u32>() as f32 / samples.len() as f32,
+            samples.iter().map(|r| r.floor).sum::<u32>() as f32 / samples.len() as f32,
+            samples.iter().map(|r| r.gold).sum::<u32>() as f32 / samples.len() as f32,
+            samples.iter().filter(|r| r.health == 0).count());
     }
 }
 
 fn run_simulation(run: &mut Run, starting_room: &MapRoom) -> (u32, u32) {
-    let mut run = run.clone();
     let mut next_room = starting_room.up_nodes.get(0);
 
     while run.health > 0 && let Some(room) = next_room {
