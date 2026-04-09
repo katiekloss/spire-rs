@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use spire_rs::{Run, encounters::{self, Encounter}, relics::Relics};
+use spire_rs::{Run, encounters::Encounter, relics::Relics};
 
 fn start_run() -> Run {
     let run = Run {

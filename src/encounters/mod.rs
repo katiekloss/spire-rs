@@ -2,7 +2,7 @@ use std::{cmp::min, collections::HashMap};
 
 use rand::seq::SliceRandom;
 
-use crate::{Damageable, Effect, Effectable, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, monsters::{Enemy, Moves}, relics::{RELICS, RelicInstance, RelicState, Relics}};
+use crate::{Damageable, Effect, Effectable, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, monsters::{Enemy, Moves}, relics::{RELICS, Relics}};
 
 pub struct Player {
     pub energy: u32,

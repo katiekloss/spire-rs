@@ -2,7 +2,7 @@ mod defs;
 
 use std::{collections::HashMap, sync::LazyLock};
 
-use crate::{Run, encounters::Encounter, relics::defs::{BLOOD_VIAL, RING_OF_THE_SNAKE}};
+use crate::{encounters::Encounter, relics::defs::{BLOOD_VIAL, RING_OF_THE_SNAKE}};
 
 pub static RELICS: LazyLock<HashMap<Relics, &'static RelicImpl>> = LazyLock::new(|| {
     let mut m = HashMap::new();
