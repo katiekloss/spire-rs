@@ -19,8 +19,9 @@ For way more info than you probably care about, see my [dev logs](https://kat5.d
 - [x] Monte Carlo card reward picker
 - [ ] Relics
 - [ ] Events
+- [ ] Potions
 - [ ] Randomized maps
-- [ ] Deterministic seeds
+- [ ] Deterministic seeds (maybe)
 - [ ] The rest of the owl
 - [ ] Neural network gameplay
 
