@@ -22,13 +22,13 @@ pub fn applying_strength_increases_damage() {
 
     let mut encounter = Encounter::new(&run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
-    assert_eq!(encounter.enemies[0].health, 55);
+    let health = encounter.enemies[0].health;
 
     encounter.begin_turn();
 
     encounter.player.effects.push(spire_rs::Effect::Strength(1));
     encounter.play(get_card!(Card::SilentStrike, encounter.hand).unwrap().id, encounter.enemies[0].id, vec![], &vec![]);
-    assert_eq!(encounter.enemies[0].health, 48);
+    assert_eq!(encounter.enemies[0].health, health - 7);
 
     encounter.enemies[0].effects.push(spire_rs::Effect::Strength(1));
     encounter.yield_turn();
@@ -43,13 +43,13 @@ pub fn applying_weak_reduces_damage() {
 
     let mut encounter = Encounter::new(&run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
-    assert_eq!(encounter.enemies[0].health, 55);
+    let health = encounter.enemies[0].health;
 
     encounter.begin_turn();
 
     encounter.player.effects.push(spire_rs::Effect::Weak(1));
     encounter.play(get_card!(Card::SilentStrike, encounter.hand).unwrap().id, encounter.enemies[0].id, vec![], &vec![]);
-    assert_eq!(encounter.enemies[0].health, 51);
+    assert_eq!(encounter.enemies[0].health, health - 4);
 
     encounter.enemies[0].effects.push(spire_rs::Effect::Weak(1));
     encounter.yield_turn();

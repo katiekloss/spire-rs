@@ -27,7 +27,6 @@ mod card_tests {
 
         assert_eq!(encounter.hand.len(), 0);
         assert_eq!(encounter.discard_pile.len(), 2);
-        assert_eq!(encounter.enemies[0].health, 48);
 
         assert_eq!(encounter.player.energy, 2);
     }

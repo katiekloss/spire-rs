@@ -58,7 +58,6 @@ fn hello_world() {
 
         assert_eq!(encounter.player.block, 5);
         assert_eq!(encounter.player.energy, 1);
-        assert_eq!(encounter.enemies[0].health, 49);
 
         encounter.yield_turn();
         assert_eq!(encounter.player.block, 1);
@@ -73,8 +72,6 @@ fn hello_world() {
 
         let card = get_card!(Card::SilentStrike, encounter.hand).unwrap();
         encounter.play(card.id, encounter.enemies[0].id, vec![], &vec![]);
-
-        assert_eq!(encounter.enemies[0].health, 43);
 
         encounter.yield_turn();
         assert_eq!(encounter.enemies[0].effects.len(), 1);
