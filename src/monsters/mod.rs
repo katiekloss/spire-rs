@@ -1,12 +1,14 @@
 use std::{collections::HashMap, sync::{LazyLock, Mutex}};
 
+use rand::RngExt;
+
 use crate::{Damageable, Effect, Effectable, Target, Team, cards::library::Card};
 
 static ENEMY_ID: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(1)); // the player is 0
 static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
     let mut m = HashMap::new();
     m.insert(Monsters::FuzzyWurmCrawler, MonsterData {
-        health: 55,
+        health: (55, 57),
         moves: vec![
             vec![Moves::Attack(4)],
             vec![Moves::Attack(4)],
@@ -14,7 +16,7 @@ static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
         starting_effects: vec![]
     });
     m.insert(Monsters::SmallLeafSlime, MonsterData {
-        health: 11,
+        health: (11, 15),
         moves: vec![
             vec![Moves::Attack(3)],
             vec![Moves::StatusCard(Card::Slimed)]
@@ -22,7 +24,7 @@ static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
         starting_effects: vec![]
     });
     m.insert(Monsters::MediumLeafSlime, MonsterData {
-        health: 32,
+        health: (32, 35),
         moves: vec![
             vec![Moves::Attack(8)],
             vec![Moves::StatusCard(Card::Slimed)]
@@ -30,14 +32,14 @@ static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
         starting_effects: vec![]
     });
     m.insert(Monsters::SmallTwigSlime, MonsterData {
-        health: 7,
+        health: (7, 11),
         moves: vec![
             vec![Moves::Attack(4)]
         ],
         starting_effects: vec![]
     });
     m.insert(Monsters::MediumTwigSlime, MonsterData {
-        health: 26,
+        health: (26, 28),
         moves: vec![
             vec![Moves::Attack(11)],
             vec![Moves::StatusCard(Card::Slimed)]
@@ -45,7 +47,7 @@ static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
         starting_effects: vec![]
     });
     m.insert(Monsters::Byrdonis, MonsterData {
-        health: 91,
+        health: (91, 94),
         moves: vec![
             vec![Moves::Attack(3), Moves::Attack(3), Moves::Attack(3)],
             vec![Moves::Attack(16)]
@@ -75,8 +77,10 @@ pub enum Moves {
     StatusCard(Card)
 }
 
+type HealthRange = (u32, u32);
+
 pub struct MonsterData {
-    health: u32,
+    health: HealthRange,
     moves: Vec<Vec<Moves>>,
     starting_effects: Vec<Effect>
 }
@@ -93,11 +97,13 @@ pub struct Enemy {
 
 impl Enemy {
     pub fn new(monster: Monsters) -> Self {
+        let mut rng = rand::rng();
+        let def = &MONSTERS[&monster];
         Self {
             id: { let mut i = ENEMY_ID.lock().unwrap(); *i += 1; *i },
-            health: MONSTERS[&monster].health,
-            moves: MONSTERS[&monster].moves.clone(),
-            effects: MONSTERS[&monster].starting_effects.clone(),
+            health: rng.random_range(def.health.0..def.health.1),
+            moves: def.moves.clone(),
+            effects: def.starting_effects.clone(),
             monster,
             block: 0,
             move_idx: 0,
