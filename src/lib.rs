@@ -30,10 +30,6 @@ pub enum Effect {
     Custom(&'static PowerImpl)
 }
 
-pub trait Relic {
-
-}
-
 pub trait Damageable {
     fn get_block(&self) -> u32;
     fn get_health(&self) -> u32;
