@@ -9,6 +9,7 @@ fn main() {
         floor: 0,
         relics: vec![Relics::RingOfTheSnake],
         health: 70,
+        max_health: 70,
         gold: 99,
         deck: vec![],
     };
@@ -23,7 +24,7 @@ fn main() {
     for card in [Card::CloakAndDagger, Card::BladeDance, Card::Ricochet, Card::DaggerSpray] {
         let mut samples = vec![];
         info!("Running simulations for {:?}", card);
-        
+
         for i in 1..100_000 {
             let mut run = run.clone();
             run.deck.push(CardInstance::new(card));

@@ -8,6 +8,7 @@ mod card_tests {
             floor: 1,
             gold: 0,
             health: 1,
+            max_health: 1,
             relics: vec![],
         };
 

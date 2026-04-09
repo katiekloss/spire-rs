@@ -1,3 +1,4 @@
+#![feature(default_field_values)]
 
 use crate::{cards::CardInstance, powers::PowerImpl, relics::Relics};
 
@@ -14,6 +15,7 @@ pub struct Run {
     pub relics: Vec<Relics>,
     pub health: u32,
     pub gold: u32,
+    pub max_health: u32,
     pub deck: Vec<CardInstance>,
 }
 

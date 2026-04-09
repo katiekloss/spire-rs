@@ -9,9 +9,9 @@ steps:
   - name: test
     image: rust:1-alpine
     commands:
-      - cargo test
+      - cargo +nightly test
 
   - name: demo
     image: rust:1-alpine
     commands:
-      - cargo run --release --bin=demo
+      - cargo +nightly run --release --bin=demo

@@ -1,8 +1,8 @@
-use std::cmp::min;
+use std::{cmp::min, collections::HashMap};
 
 use rand::seq::SliceRandom;
 
-use crate::{Damageable, Effect, Effectable, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, monsters::{Enemy, Moves}, relics::Relics};
+use crate::{Damageable, Effect, Effectable, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, monsters::{Enemy, Moves}, relics::{RELICS, RelicInstance, RelicState, Relics}};
 
 pub struct Player {
     pub energy: u32,
@@ -29,8 +29,9 @@ impl Target for Player {
 
 pub struct Encounter<'a> {
     pub run: &'a Run,
-
+    
     pub player: Player,
+    pub relics: HashMap<Relics, u32>,
     pub draw_pile: Vec<CardInstance>,
     pub hand: Vec<CardInstance>,
     pub discard_pile: Vec<CardInstance>,
@@ -47,6 +48,7 @@ impl<'a> Encounter<'a> {
         Self {
             run,
             turn: 0,
+            relics: run.relics.iter().map(|r| (r.clone(), 0)).collect(),
             enemies: vec![],
             draw_pile: vec![],
             hand: vec![],
@@ -64,6 +66,15 @@ impl<'a> Encounter<'a> {
         assert_eq!(self.player.block, 0, "Previous turn wasn't committed");
 
         self.turn += 1;
+
+        if self.turn == 1 {
+            for relic in self.relics.clone() { // booooooo
+                if let Some(combat_started) = RELICS[&relic.0].combat_started {
+                    let new = combat_started(relic.1, self);
+                    self.relics.insert(relic.0, new);
+                }
+            }
+        }
 
         self.refill_draw_pile();
         
@@ -335,6 +346,7 @@ mod draw_tests {
             floor: 1,
             gold: 0,
             health: 1,
+            max_health: 1,
             relics: vec![],
         };
 

@@ -8,6 +8,7 @@ fn start_run() -> Run {
         floor: 1,
         gold: 0,
         health: 100,
+        max_health: 100,
         relics: vec![],
     };
 

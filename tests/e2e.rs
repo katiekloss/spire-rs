@@ -7,6 +7,7 @@ fn hello_world() {
         floor: 0,
         relics: vec![],
         health: 70,
+        max_health: 70,
         gold: 99,
         deck: vec![],
     };
