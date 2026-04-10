@@ -2,7 +2,7 @@ use std::{cmp::min, collections::HashMap};
 
 use rand::seq::SliceRandom;
 
-use crate::{Damageable, Effect, Effectable, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, monsters::{Enemy, Moves}, relics::{RELICS, Relics}};
+use crate::{Damageable, Effect, Effectable, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, encounters, monsters::{Enemy, Moves}, relics::{RELICS, Relics}};
 
 pub struct Player {
     pub energy: u32,
@@ -74,6 +74,29 @@ impl<'a> Encounter<'a> {
                     self.relics.insert(relic.0, new);
                 }
             }
+        }
+
+        // Tick effects
+        let mut effects = vec![];
+        while let Some(effect) = self.player.effects.pop() {
+            match effect {
+                Effect::Vulnerable(v) if v > 1 => effects.push(Effect::Vulnerable(v - 1)),
+                Effect::Vulnerable(_) => {},
+                _ => effects.push(effect),
+            }
+        }
+        self.player.effects = effects;
+
+        for enemy in &mut self.enemies {
+            let mut effects = vec![];
+            while let Some(effect) = enemy.effects.pop() {
+                match effect {
+                    Effect::Vulnerable(v) if v > 1 => effects.push(Effect::Vulnerable(v - 1)),
+                    Effect::Vulnerable(_) => {},
+                    _ => effects.push(effect),
+                }
+            }
+            enemy.effects = effects;
         }
 
         self.refill_draw_pile();
@@ -163,7 +186,7 @@ impl<'a> Encounter<'a> {
                         todo!();
                     } else {
                         let enemy = self.enemies.iter_mut().filter(|e| e.id == target_id).nth(0).unwrap();
-                        Self::resolve_attack(enemy, Self::query_attack_damage(&self.player, d));
+                        Self::resolve_attack(enemy, Self::query_attack_damage(&self.player, enemy, d));
                     }
                 },
                 CardAction::GainBlock(b) => self.player.block += b,
@@ -250,7 +273,7 @@ impl<'a> Encounter<'a> {
             for mv in &enemy.moves[enemy.move_idx] {
                 match mv {
                     Moves::Attack(dmg) => {
-                        let dmg = Self::query_attack_damage(enemy, *dmg);
+                        let dmg = Self::query_attack_damage(enemy, &self.player, *dmg);
                         Self::resolve_attack(&mut self.player, dmg);
                     },
                     Moves::Buff(effect) => {
@@ -269,12 +292,19 @@ impl<'a> Encounter<'a> {
         }
     }
 
-    fn query_attack_damage<T: Effectable>(source: &T, base_damage: u32) -> u32 {
+    fn query_attack_damage<TS: Effectable, TT: Effectable>(source: &TS, target: &TT, base_damage: u32) -> u32 {
         let mut total_damage = base_damage;
         for effect in source.get_effects() {
             match effect {
                 Effect::Strength(s) => total_damage += s,
                 Effect::Weak(_) => total_damage = ((base_damage as f32) * 0.75).floor() as u32,
+                _ => {}
+            }
+        }
+
+        for effect in target.get_effects() {
+            match effect {
+                Effect::Vulnerable(_) => total_damage = (total_damage as f32 * 1.5).floor() as u32,
                 _ => {}
             }
         }
@@ -309,7 +339,7 @@ impl<'a> Encounter<'a> {
             .map(|mv| {
                 match mv {
                     Moves::Attack(dmg) => {
-                        Moves::Attack(Self::query_attack_damage(enemy, *dmg))
+                        Moves::Attack(Self::query_attack_damage(enemy, &self.player, *dmg))
                     }
                     x => x.clone()
                 }

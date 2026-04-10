@@ -69,7 +69,7 @@ pub enum Monsters {
     Byrdonis
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Moves {
     Attack(u32),
     Buff(Effect),

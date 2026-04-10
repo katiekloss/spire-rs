@@ -24,11 +24,12 @@ pub enum EncounterOutcome {
     Dead
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Effect {
     Strength(u32),
     Weak(u32),
     Territorial(u32),
+    Vulnerable(u32),
     Custom(&'static PowerImpl)
 }
 
