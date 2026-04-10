@@ -19,9 +19,12 @@ pub struct Run {
     pub deck: Vec<CardInstance>,
 }
 
-pub enum EncounterOutcome {
-    Alive,
-    Dead
+/// A request from a relic, power, or card to perform a write operation against the encounter
+pub enum EncounterOp {
+    /// Direct unamped damage (.1) towards an enemy ID (.0)
+    Damage(u32, u32),
+    /// Set a relic counter to a specific value
+    SetCounter(Relics, u32)
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]

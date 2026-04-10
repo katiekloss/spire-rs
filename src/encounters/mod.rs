@@ -2,7 +2,7 @@ use std::{cmp::min, collections::HashMap};
 
 use rand::seq::SliceRandom;
 
-use crate::{Damageable, Effect, Effectable, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, monsters::{Enemy, Moves}, relics::{RELICS, Relics}};
+use crate::{Damageable, Effect, Effectable, EncounterOp, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, monsters::{Enemy, Moves}, relics::{self, RELICS, Relics}};
 
 pub struct Player {
     pub energy: u32,
@@ -210,6 +210,7 @@ impl<'a> Encounter<'a> {
                     // }
                     for id in &other_cards {
                         let i = self.find_card_in_hand(*id);
+                        let mut further = vec![];
                         let card = &self.hand[i];
 
                         if card.keywords.contains(&Keywords::Sly) {
@@ -218,8 +219,17 @@ impl<'a> Encounter<'a> {
                             self.play(card.id, target_id, vec![], &stack);
                             stack.pop();
                         } else {
+                            for relic in &self.relics { // booooooooooooooo
+                                if let Some(discarded) = RELICS[&relic.0].card_discarded {
+                                    further.append(&mut discarded(card, self));
+                                }
+                            }
+
                             self.discard_pile.push(self.hand.swap_remove(i));
                         }
+
+                        self.do_encounter_ops(further);
+
                     }
                 },
                 CardAction::DamageAllOthers(d) => {
@@ -246,6 +256,19 @@ impl<'a> Encounter<'a> {
             self.exhaust_pile.push(card);
         } else {
             self.discard_pile.push(card);
+        }
+    }
+
+    fn do_encounter_ops(&mut self, ops: Vec<EncounterOp>) {
+        for op in ops {
+            match op {
+                EncounterOp::SetCounter(relic, new_value) => {
+                    self.relics.insert(relic, new_value);
+                },
+                EncounterOp::Damage(target_id, damage) => {
+                    self.basic_attack(target_id, damage);
+                }
+            }
         }
     }
 
@@ -313,6 +336,19 @@ impl<'a> Encounter<'a> {
             }
         }
         total_damage
+    }
+
+    /// Attacks an enemy without applying damage amplification effects
+    pub fn basic_attack(&mut self, target_id: u32, damage: u32) {
+        let enemy = 'get: {
+            for enemy in &mut self.enemies {
+                if enemy.id == target_id {
+                    break 'get enemy;
+                }
+            }
+            panic!();
+        };
+        Self::resolve_attack(enemy, damage);
     }
 
     pub fn resolve_attack<T: Damageable>(target: &mut T, damage: u32) {
