@@ -29,33 +29,27 @@ impl MapGenerator {
     pub fn generate() -> MapRoom {
         let mut rng = rand::rng();
 
-        MapRoom {
-            t: RoomType::Ancient(Ancients::Neow),
-            up_nodes: vec![
-                MapRoom {
-                    t: RoomType::Encounter(vec![Monsters::FuzzyWurmCrawler], rng.random_range(10..20)),
-                    up_nodes: vec![
-                        MapRoom {
-                            t: RoomType::Encounter(vec![Monsters::SmallLeafSlime, Monsters::MediumLeafSlime, Monsters::SmallTwigSlime, Monsters::MediumTwigSlime], rng.random_range(10..20)),
-                            up_nodes: vec![
-                                MapRoom {
-                                    t: RoomType::Encounter(vec![Monsters::MediumLeafSlime, Monsters::FuzzyWurmCrawler], rng.random_range(10..20)),
-                                    up_nodes: vec![
-                                        MapRoom {
-                                            t: RoomType::Treasure(Relics::RingOfTheSnake, rng.random_range(42..52)),
-                                            up_nodes: vec![
-                                                MapRoom {
-                                                    t: RoomType::Elite(vec![Monsters::Byrdonis], rng.random_range(35..45)),
-                                                    up_nodes: vec![]
-                                                }]
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                },
-            ]
+        let rooms = vec![
+            RoomType::Ancient(Ancients::Neow),
+            RoomType::Encounter(vec![Monsters::FuzzyWurmCrawler], rng.random_range(10..20)),
+            RoomType::Encounter(vec![Monsters::SmallLeafSlime, Monsters::MediumLeafSlime, Monsters::SmallTwigSlime, Monsters::MediumTwigSlime], rng.random_range(10..20)),
+            RoomType::Encounter(vec![Monsters::MediumLeafSlime, Monsters::FuzzyWurmCrawler], rng.random_range(10..20)),
+            RoomType::Treasure(Relics::RingOfTheSnake, rng.random_range(42..52)),
+            RoomType::Elite(vec![Monsters::Byrdonis], rng.random_range(35..45)),
+        ];
+
+        let mut current_room = MapRoom {
+            t: rooms[rooms.len() - 1].clone(),
+            up_nodes: vec![]
+        };
+
+        for i in (0 .. rooms.len() - 1).rev() {
+            current_room = MapRoom {
+                t: rooms[i].clone(),
+                up_nodes: vec![current_room]
+            };
         }
+
+        current_room
     }
 }
