@@ -30,7 +30,8 @@ pub enum Effect {
     Weak(u32),
     Territorial(u32),
     Vulnerable(u32),
-    Custom(&'static PowerImpl)
+    Custom(&'static PowerImpl),
+    Dexterity(u32)
 }
 
 pub trait Damageable {

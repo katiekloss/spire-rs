@@ -7,7 +7,7 @@ use crate::{Effect, Keywords, cards::library::{CARDS, Card}, encounters::Encount
 
 static CARD_IDS: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(0));
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum CardType {
     Skill,
     Power,
@@ -20,7 +20,7 @@ pub struct CardData {
     pub actions: Vec<CardAction>,
     pub keywords: Vec<Keywords>,
     pub cost: u32,
-    pub custom: Option<&'static CustomCard>
+    pub custom: Option<&'static CustomCard> = None
     // secondary_cost: u8 // regent
 }
 
@@ -51,7 +51,8 @@ pub enum CardAction {
     AffectSelf(Effect),
     AffectAllOthers(Effect),
     Apply(Effect),
-    Materialize(Card)
+    Materialize(Card),
+    GainEnergy(u32)
 }
 
 impl CardInstance {

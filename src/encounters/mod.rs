@@ -2,7 +2,7 @@ use std::{cmp::min, collections::HashMap};
 
 use rand::seq::SliceRandom;
 
-use crate::{Damageable, Effect, Effectable, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, encounters, monsters::{Enemy, Moves}, relics::{RELICS, Relics}};
+use crate::{Damageable, Effect, Effectable, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, monsters::{Enemy, Moves}, relics::{RELICS, Relics}};
 
 pub struct Player {
     pub energy: u32,
@@ -189,7 +189,7 @@ impl<'a> Encounter<'a> {
                         Self::resolve_attack(enemy, Self::query_attack_damage(&self.player, enemy, d));
                     }
                 },
-                CardAction::GainBlock(b) => self.player.block += b,
+                CardAction::GainBlock(b) => self.player.block += b, // TODO: Dexterity
                 CardAction::AffectSelf(x) => self.player.effects.push(x),
                 CardAction::AffectAllOthers(x) => {
                     for enemy in self.enemies.iter_mut() {
@@ -232,6 +232,9 @@ impl<'a> Encounter<'a> {
                 },
                 CardAction::Materialize(new_card) => {
                     self.hand.push(CardInstance::new(new_card));
+                },
+                CardAction::GainEnergy(e) => {
+                    self.player.energy += e;
                 }
             }
         }
@@ -262,6 +265,7 @@ impl<'a> Encounter<'a> {
             return;
         }
 
+        // TODO: Innate
         while self.discard_pile.len() > 0 {
             self.draw_pile.push(self.discard_pile.pop().unwrap());
         }
