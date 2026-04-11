@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod card_tests {
+    use std::collections::HashMap;
+
     use spire_rs::{Run, cards::{CardInstance, library::Card}, encounters::Encounter, get_card, monsters::{Enemy, Monsters}};
 
     fn start_run() -> Run {
@@ -9,7 +11,7 @@ mod card_tests {
             gold: 0,
             health: 1,
             max_health: 1,
-            relics: vec![],
+            relics: HashMap::new()
         };
 
         run
@@ -20,7 +22,7 @@ mod card_tests {
         let mut run = start_run();
         run.deck.push(CardInstance::new(Card::Survivor));
         run.deck.push(CardInstance::new(Card::FlickFlack));
-        let mut encounter = Encounter::new(&run);
+        let mut encounter = Encounter::new(&mut run);
         encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
 
         encounter.begin_turn();
@@ -45,7 +47,7 @@ mod card_tests {
             CardInstance::new(Card::SilentDefend),
             CardInstance::new(Card::SilentDefend)
         ]);
-        let mut encounter = Encounter::new(&run);
+        let mut encounter = Encounter::new(&mut run);
 
         let acrobatics = 'get: loop {
             encounter.begin_turn();

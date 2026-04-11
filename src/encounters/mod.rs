@@ -1,4 +1,4 @@
-use std::{cmp::min, collections::HashMap};
+use std::cmp::min;
 
 use rand::seq::SliceRandom;
 
@@ -28,10 +28,9 @@ impl Target for Player {
 }
 
 pub struct Encounter<'a> {
-    pub run: &'a Run,
+    pub run: &'a mut Run,
     
     pub player: Player,
-    pub relics: HashMap<Relics, u32>,
     pub draw_pile: Vec<CardInstance>,
     pub hand: Vec<CardInstance>,
     pub discard_pile: Vec<CardInstance>,
@@ -42,13 +41,11 @@ pub struct Encounter<'a> {
 }
 
 impl<'a> Encounter<'a> {
-    pub fn new(run: &'a Run) -> Self {
+    pub fn new(run: &'a mut Run) -> Self {
         let cards = run.deck.clone();            
 
         Self {
-            run,
             turn: 0,
-            relics: run.relics.iter().map(|r| (r.clone(), 0)).collect(),
             enemies: vec![],
             draw_pile: vec![],
             hand: vec![],
@@ -59,7 +56,8 @@ impl<'a> Encounter<'a> {
                 effects: vec![],
                 energy: 3,
                 block: 0,
-            }
+            },
+            run
     }}
     
     pub fn begin_turn(&mut self) {
@@ -68,7 +66,7 @@ impl<'a> Encounter<'a> {
         self.turn += 1;
 
         if self.turn == 1 {
-            for relic in self.relics.clone() { // booooooo
+            for relic in self.run.relics.clone() { // booooooo
                 if let Some(combat_started) = RELICS[&relic.0].combat_started {
                     self.do_encounter_ops(combat_started(self));
                 }
@@ -102,7 +100,7 @@ impl<'a> Encounter<'a> {
         
         // put this somewhere elseeeeeeeeeeeeee
         let draw_size;
-        if self.turn == 1 && self.run.relics.contains(&Relics::RingOfTheSnake) {
+        if self.turn == 1 && self.run.relics.contains_key(&Relics::RingOfTheSnake) {
             draw_size = 7;
         } else {
             draw_size = 5;
@@ -218,7 +216,7 @@ impl<'a> Encounter<'a> {
                             self.play(card.id, target_id, vec![], &stack);
                             stack.pop();
                         } else {
-                            for relic in &self.relics { // booooooooooooooo
+                            for relic in &self.run.relics { // booooooooooooooo
                                 if let Some(discarded) = RELICS[&relic.0].card_discarded {
                                     further.append(&mut discarded(card, self));
                                 }
@@ -262,7 +260,7 @@ impl<'a> Encounter<'a> {
         for op in ops {
             match op {
                 EncounterOp::SetCounter(relic, new_value) => {
-                    self.relics.insert(relic, new_value);
+                    self.run.relics.insert(relic, new_value);
                 },
                 EncounterOp::Damage(target_id, damage) => {
                     self.basic_attack(target_id, damage);
@@ -416,6 +414,8 @@ impl Damageable for Player {
 
 #[cfg(test)]
 mod draw_tests {
+    use std::collections::HashMap;
+
     use crate::{Run, cards::{CardInstance, library::Card}, encounters::Encounter};
 
     fn start_run(cards: u32) -> Run {
@@ -425,7 +425,7 @@ mod draw_tests {
             gold: 0,
             health: 1,
             max_health: 1,
-            relics: vec![],
+            relics: HashMap::new(),
         };
 
         for _ in 0..cards {
@@ -437,8 +437,8 @@ mod draw_tests {
 
     #[test]
     fn regular_draw() {
-        let run = start_run(6);
-        let mut encounter = Encounter::new(&run);
+        let mut run = start_run(6);
+        let mut encounter = Encounter::new(&mut run);
         encounter.begin_turn();
 
         assert_eq!(1, encounter.draw_pile.len());
@@ -447,8 +447,8 @@ mod draw_tests {
 
     #[test]
     fn draw_with_shuffle() {
-        let run = start_run(6);
-        let mut encounter = Encounter::new(&run);
+        let mut run = start_run(6);
+        let mut encounter = Encounter::new(&mut run);
         encounter.begin_turn();
         encounter.yield_turn();
         encounter.end_turn();

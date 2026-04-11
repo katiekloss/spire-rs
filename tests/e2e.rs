@@ -1,11 +1,13 @@
 #![cfg(test)]
+use std::collections::HashMap;
+
 use spire_rs::{Run, cards::{ CardInstance, library::Card}, encounters::Encounter, get_card, monsters::{Enemy, Monsters}};
 
 #[test]
 fn hello_world() {
     let mut run = Run {
         floor: 0,
-        relics: vec![],
+        relics: HashMap::new(),
         health: 70,
         max_health: 70,
         gold: 99,
@@ -19,9 +21,9 @@ fn hello_world() {
     run.deck.push(CardInstance::new(Card::Survivor));
     run.deck.push(CardInstance::new(Card::Neutralize));
 
-    run.relics.push(spire_rs::relics::Relics::RingOfTheSnake);
+    run.relics.insert(spire_rs::relics::Relics::RingOfTheSnake, 0);
 
-    let mut encounter = Encounter::new(&run);
+    let mut encounter = Encounter::new(&mut run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
 
     {

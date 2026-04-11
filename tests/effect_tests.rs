@@ -1,5 +1,7 @@
 #![cfg(test)]
 
+use std::collections::HashMap;
+
 use spire_rs::{Effect, Run, cards::{CardInstance, library::Card}, encounters::Encounter, get_card, monsters::{Enemy, Monsters}};
 
 fn start_run() -> Run {
@@ -9,7 +11,7 @@ fn start_run() -> Run {
         gold: 0,
         health: 70,
         max_health: 70,
-        relics: vec![],
+        relics: HashMap::new(),
     };
 
     run
@@ -21,7 +23,7 @@ pub fn applying_strength_increases_damage() {
     run.deck.push(CardInstance::new(Card::SilentStrike));
     run.deck.push(CardInstance::new(Card::SilentStrike));
 
-    let mut encounter = Encounter::new(&run);
+    let mut encounter = Encounter::new(&mut run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
     let health = encounter.enemies[0].health;
 
@@ -42,7 +44,7 @@ pub fn applying_weak_reduces_damage() {
     run.deck.push(CardInstance::new(Card::SilentStrike));
     run.deck.push(CardInstance::new(Card::SilentStrike));
 
-    let mut encounter = Encounter::new(&run);
+    let mut encounter = Encounter::new(&mut run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
     let health = encounter.enemies[0].health;
 
@@ -59,8 +61,8 @@ pub fn applying_weak_reduces_damage() {
 
 #[test]
 pub fn applying_territorial_applies_strength() {
-    let run = start_run();
-    let mut encounter = Encounter::new(&run);
+    let mut run = start_run();
+    let mut encounter = Encounter::new(&mut run);
     encounter.enemies.push(Enemy::new(Monsters::Byrdonis));
     
     encounter.begin_turn();

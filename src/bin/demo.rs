@@ -1,3 +1,7 @@
+#![feature(hash_map_macro)]
+
+use std::hash_map;
+
 use log::{debug, info, trace};
 use spire_rs::{Run, cards::{CardInstance, CardType, library::{CARDS, Card}}, encounters::Encounter, get_card, map::{MapGenerator, MapRoom, RoomType}, monsters::{Enemy, Monsters, Moves}, relics::Relics};
 use std_logger::Config;
@@ -7,7 +11,7 @@ fn main() {
 
     let mut run = Run {
         floor: 0,
-        relics: vec![Relics::RingOfTheSnake],
+        relics: hash_map! {Relics::RingOfTheSnake => 0, Relics::Anchor => 0},
         health: 70,
         max_health: 70,
         gold: 99,
@@ -53,12 +57,7 @@ fn run_simulation(run: &mut Run, starting_room: &MapRoom) -> (u32, u32) {
         debug!("Moving to floor {}", run.floor);
 
         match &room.t {
-            RoomType::Encounter(monsters, gold) => {
-                if !run_encounter_room(monsters, run, *gold) {
-                    break;
-                }
-            },
-            RoomType::Elite(monsters, gold) => {
+            RoomType::Encounter(monsters, gold) | RoomType::Elite(monsters, gold) => {
                 if !run_encounter_room(monsters, run, *gold) {
                     break;
                 }

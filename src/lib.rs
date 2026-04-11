@@ -1,5 +1,7 @@
 #![feature(default_field_values)]
 
+use std::collections::HashMap;
+
 use crate::{cards::CardInstance, powers::PowerImpl, relics::Relics};
 
 pub mod cards;
@@ -12,7 +14,7 @@ pub mod powers;
 #[derive(Clone)]
 pub struct Run {
     pub floor: u32,
-    pub relics: Vec<Relics>,
+    pub relics: HashMap<Relics, u32>,
     pub health: u32,
     pub gold: u32,
     pub max_health: u32,

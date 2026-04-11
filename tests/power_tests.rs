@@ -1,5 +1,7 @@
 #![cfg(test)]
 
+use std::collections::HashMap;
+
 use spire_rs::{Run, cards::{CardInstance, library::Card}, encounters::Encounter, get_card, powers::defs::AFTERIMAGE};
 
 fn start_run() -> Run {
@@ -9,7 +11,7 @@ fn start_run() -> Run {
         gold: 0,
         health: 100,
         max_health: 100,
-        relics: vec![],
+        relics: HashMap::new(),
     };
 
     run
@@ -20,7 +22,7 @@ fn afterimage() {
     let mut run = start_run();
     run.deck.push(CardInstance::new(Card::SilentDefend));
 
-    let mut encounter = Encounter::new(&run);
+    let mut encounter = Encounter::new(&mut run);
     encounter.player.effects.push(spire_rs::Effect::Custom(&AFTERIMAGE));
 
     encounter.begin_turn();

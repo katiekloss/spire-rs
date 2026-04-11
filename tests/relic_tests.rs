@@ -1,5 +1,7 @@
 #![cfg(test)]
 
+use std::collections::HashMap;
+
 use spire_rs::{Run, cards::{CardInstance, library::Card}, encounters::Encounter, get_card, monsters::{Enemy, Monsters}, relics::Relics};
 
 fn start_run() -> Run {
@@ -9,7 +11,7 @@ fn start_run() -> Run {
         gold: 0,
         health: 100,
         max_health: 100,
-        relics: vec![],
+        relics: HashMap::new(),
     };
 
     run
@@ -19,8 +21,8 @@ fn start_run() -> Run {
 fn blood_vial_adds_health() {
     let mut run = start_run();
     run.health = 90;
-    run.relics.push(Relics::BloodVial);
-    let mut encounter = Encounter::new(&run);
+    run.relics.insert(Relics::BloodVial, 0);
+    let mut encounter = Encounter::new(&mut run);
     encounter.begin_turn();
 
     assert_eq!(encounter.player.health, 92);
@@ -30,8 +32,8 @@ fn blood_vial_adds_health() {
 fn blood_vial_doesnt_exceed_max_health() {
     let mut run = start_run();
     run.health = 100;
-    run.relics.push(Relics::BloodVial);
-    let mut encounter = Encounter::new(&run);
+    run.relics.insert(Relics::BloodVial, 0);
+    let mut encounter = Encounter::new(&mut run);
     encounter.begin_turn();
 
     assert_eq!(encounter.player.health, 100);
@@ -43,9 +45,9 @@ fn tingsha_damages_enemies() {
     run.health = 100;
     run.deck.push(CardInstance::new(Card::Survivor));
     run.deck.push(CardInstance::new(Card::SilentDefend));
-    run.relics.push(Relics::Tingsha);
+    run.relics.insert(Relics::Tingsha, 0);
 
-    let mut encounter = Encounter::new(&run);
+    let mut encounter = Encounter::new(&mut run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
     let starting_health = encounter.enemies[0].health;
     
