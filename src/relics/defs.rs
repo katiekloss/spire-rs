@@ -31,3 +31,10 @@ pub static TINGSHA: RelicImpl = RelicImpl {
     }),
     ..
 };
+
+pub static ANCHOR: RelicImpl = RelicImpl {
+    combat_started: Some(|_| -> Vec<EncounterOp> {
+        vec![EncounterOp::GainBlock(10)]
+    }),
+    ..
+};

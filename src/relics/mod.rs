@@ -2,7 +2,7 @@ mod defs;
 
 use std::{collections::HashMap, sync::LazyLock};
 
-use crate::{EncounterOp, cards::CardInstance, encounters::{self, Encounter}, relics::defs::*};
+use crate::{EncounterOp, cards::CardInstance, encounters::Encounter, relics::defs::*};
 
 pub static RELICS: LazyLock<HashMap<Relics, &'static RelicImpl>> = LazyLock::new(|| {
     let mut m = HashMap::new();
@@ -10,6 +10,7 @@ pub static RELICS: LazyLock<HashMap<Relics, &'static RelicImpl>> = LazyLock::new
     m.insert(Relics::BloodVial, &BLOOD_VIAL);
     m.insert(Relics::Vajra, &VAJRA);
     m.insert(Relics::Tingsha, &TINGSHA);
+    m.insert(Relics::Anchor, &ANCHOR);
     m
 });
 
@@ -18,7 +19,8 @@ pub enum Relics {
     RingOfTheSnake,
     BloodVial,
     Vajra,
-    Tingsha
+    Tingsha,
+    Anchor
 }
 
 pub type CombatStartHandler = fn(encounter: &Encounter) -> Vec<EncounterOp>;
