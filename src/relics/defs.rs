@@ -17,7 +17,7 @@ pub static ANCHOR: RelicImpl = RelicImpl {
 
 pub static BAG_OF_MARBLES: RelicImpl = RelicImpl {
     combat_started: Some(|encounter| -> Vec<EncounterOp> {
-        encounter.enemies.iter().map(|e| EncounterOp::TargetPush(e.id, Effect::Vulnerable(1))).collect()
+        encounter.enemies.iter().map(|e| EncounterOp::ApplyTarget(e.id, Effect::Vulnerable(1))).collect()
     }),
     ..
 };
@@ -48,7 +48,7 @@ pub static TINGSHA: RelicImpl = RelicImpl {
 
 pub static VAJRA: RelicImpl = RelicImpl {
     combat_started: Some(|_| -> Vec<EncounterOp> {
-        vec![EncounterOp::SelfPush(Effect::Strength(1))]
+        vec![EncounterOp::ApplySelf(Effect::Strength(1))]
     }),
     ..
 };

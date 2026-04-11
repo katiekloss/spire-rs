@@ -281,10 +281,10 @@ impl<'a> Encounter<'a> {
                 EncounterOp::GainBlock(b) => {
                     self.player.block += b;
                 }
-                EncounterOp::SelfPush(fx) => {
+                EncounterOp::ApplySelf(fx) => {
                     self.player.effects.push(fx);
                 },
-                EncounterOp::TargetPush(enemy_id, fx) => {
+                EncounterOp::ApplyTarget(enemy_id, fx) => {
                     let enemy = self.enemies.iter_mut().filter(|e| e.id == enemy_id).nth(0).unwrap();
                     enemy.effects.push(fx);
                 }

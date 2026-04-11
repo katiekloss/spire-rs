@@ -30,9 +30,9 @@ pub enum EncounterOp {
     SetHealth(u32),
     GainBlock(u32),
     /// Apply an effect to the player
-    SelfPush(Effect),
+    ApplySelf(Effect),
     /// Apply an effect to an enemy by ID
-    TargetPush(u32, Effect)
+    ApplyTarget(u32, Effect)
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
