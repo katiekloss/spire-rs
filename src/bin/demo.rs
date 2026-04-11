@@ -3,7 +3,7 @@
 use std::hash_map;
 
 use log::{debug, info, trace};
-use spire_rs::{Run, cards::{CardInstance, CardType, library::{CARDS, Card}}, encounters::Encounter, get_card, map::{MapGenerator, MapRoom, RoomType}, monsters::{Enemy, Monsters, Moves}, relics::Relics};
+use spire_rs::{Run, cards::{CardInstance, CardType, library::{CARDS, Card}}, core::Encounter, get_card, map::{MapGenerator, MapRoom, RoomType}, monsters::{Enemy, Monsters, Moves}, relics::Relics};
 use std_logger::Config;
 
 fn main() {

@@ -7,7 +7,7 @@ use crate::{cards::CardInstance, powers::PowerImpl, relics::Relics};
 pub mod cards;
 pub mod relics;
 pub mod monsters;
-pub mod encounters;
+pub mod core;
 pub mod map;
 pub mod powers;
 
@@ -19,6 +19,12 @@ pub struct Run {
     pub gold: u32,
     pub max_health: u32,
     pub deck: Vec<CardInstance>,
+}
+
+/// A request to modify the run
+pub enum RunOp {
+    /// Set the player's max health
+    SetMaxHealth(u32)
 }
 
 /// A request from a relic, power, or card to perform a write operation against the encounter

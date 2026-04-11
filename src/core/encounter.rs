@@ -2,14 +2,7 @@ use std::cmp::min;
 
 use rand::seq::SliceRandom;
 
-use crate::{Damageable, Effect, Effectable, EncounterOp, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, monsters::{Enemy, Moves}, relics::{RELICS, Relics}};
-
-pub struct Player {
-    pub energy: u32,
-    pub block: u32,
-    pub health: u32,
-    pub effects: Vec<Effect>
-}
+use crate::{Damageable, Effect, Effectable, EncounterOp, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, core::{Encounter, Player}, monsters::{Enemy, Moves}, relics::{RELICS, Relics}};
 
 impl Effectable for Player {
     fn get_effects(&self) -> &Vec<Effect> {
@@ -25,19 +18,6 @@ impl Target for Player {
     fn get_id(&self) -> u32 {
         0
     }
-}
-
-pub struct Encounter<'a> {
-    pub run: &'a mut Run,
-    
-    pub player: Player,
-    pub draw_pile: Vec<CardInstance>,
-    pub hand: Vec<CardInstance>,
-    pub discard_pile: Vec<CardInstance>,
-    pub exhaust_pile: Vec<CardInstance>,
-
-    pub turn: u32,
-    pub enemies: Vec<Enemy>,
 }
 
 impl<'a> Encounter<'a> {
@@ -430,7 +410,7 @@ impl Damageable for Player {
 mod draw_tests {
     use std::collections::HashMap;
 
-    use crate::{Run, cards::{CardInstance, library::Card}, encounters::Encounter};
+    use crate::{Run, cards::{CardInstance, library::Card}, core::encounter::Encounter};
 
     fn start_run(cards: u32) -> Run {
         let mut run = Run {

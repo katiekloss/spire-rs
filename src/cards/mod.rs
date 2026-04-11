@@ -3,7 +3,7 @@ pub mod library;
 
 use std::{fmt::{Debug}, sync::{LazyLock, Mutex}};
 
-use crate::{Effect, Keywords, cards::library::{CARDS, Card}, encounters::Encounter};
+use crate::{Effect, Keywords, cards::library::{CARDS, Card}, core::Encounter};
 
 static CARD_IDS: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(0));
 

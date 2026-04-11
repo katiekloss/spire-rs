@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use spire_rs::{Run, cards::{CardInstance, library::Card}, encounters::Encounter, get_card, powers::defs::AFTERIMAGE};
+use spire_rs::{Run, cards::{CardInstance, library::Card}, core::Encounter, get_card, powers::defs::AFTERIMAGE};
 
 fn start_run() -> Run {
     let run = Run {

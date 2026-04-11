@@ -1,7 +1,7 @@
 #![cfg(test)]
 use std::collections::HashMap;
 
-use spire_rs::{Run, cards::{ CardInstance, library::Card}, encounters::Encounter, get_card, monsters::{Enemy, Monsters}};
+use spire_rs::{Run, cards::{ CardInstance, library::Card}, core::Encounter, get_card, monsters::{Enemy, Monsters}};
 
 #[test]
 fn hello_world() {

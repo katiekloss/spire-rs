@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::{cards::CardInstance, encounters::Encounter};
+use crate::{cards::CardInstance, core::Encounter};
 
 pub mod defs;
 

@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use rand::RngExt;
 
-use crate::{Effect, EncounterOp, monsters::Enemy, relics::RelicImpl};
+use crate::{Effect, EncounterOp, RunOp, monsters::Enemy, relics::RelicImpl};
 
 pub static RING_OF_THE_SNAKE: RelicImpl = RelicImpl {
     ..
@@ -25,6 +25,13 @@ pub static BAG_OF_MARBLES: RelicImpl = RelicImpl {
 pub static BLOOD_VIAL: RelicImpl = RelicImpl {
     combat_started: Some(|encounter| -> Vec<EncounterOp> {
         vec![EncounterOp::SetHealth(min(encounter.run.max_health, encounter.player.health + 2))]
+    }),
+    ..
+};
+
+pub static MANGO: RelicImpl = RelicImpl {
+    picked_up: Some(|run| -> Vec<RunOp> {
+        vec![RunOp::SetMaxHealth(run.max_health + 14)]
     }),
     ..
 };

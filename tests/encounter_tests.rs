@@ -2,7 +2,7 @@
 
 use std::{assert_matches, collections::HashMap};
 
-use spire_rs::{Effect, Run, cards::{CardInstance, library::Card}, encounters::Encounter, get_card, monsters::{Enemy, Monsters, Moves}};
+use spire_rs::{Effect, Run, cards::{CardInstance, library::Card}, core::Encounter, get_card, monsters::{Enemy, Monsters, Moves}};
 
 fn start_run() -> Run {
     let run = Run {

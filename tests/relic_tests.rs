@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use spire_rs::{Run, cards::{CardInstance, library::Card}, encounters::Encounter, get_card, monsters::{Enemy, Monsters}, relics::Relics};
+use spire_rs::{Run, cards::{CardInstance, library::Card}, core::Encounter, get_card, monsters::{Enemy, Monsters}, relics::Relics};
 
 fn start_run() -> Run {
     let run = Run {

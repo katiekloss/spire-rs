@@ -1,6 +1,6 @@
 use rand::RngExt;
 
-use crate::{cards::CustomCard, encounters::Encounter, monsters::Enemy};
+use crate::{cards::CustomCard, core::Encounter, monsters::Enemy};
 
 pub static RICOCHET: CustomCard = CustomCard {
     play: Some(|_, encounter| {

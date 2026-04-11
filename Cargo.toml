@@ -6,4 +6,4 @@ edition = "2024"
 [dependencies]
 log = "0.4.29"
 rand = "0.10.0"
-std-logger = { version = "0.5.8", default-features = false }
+std-logger = { version = "0.5.8", default-features = false, features = ["timestamp"] }
