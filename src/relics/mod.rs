@@ -21,7 +21,7 @@ pub enum Relics {
     Tingsha
 }
 
-pub type CombatStartHandler = fn(counter: u32, encounter: &mut Encounter) -> u32;
+pub type CombatStartHandler = fn(encounter: &Encounter) -> Vec<EncounterOp>;
 pub type DiscardHandler = fn(card: &CardInstance, encounter: &Encounter) -> Vec<EncounterOp>;
 
 pub struct RelicImpl {

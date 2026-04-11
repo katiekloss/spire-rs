@@ -2,24 +2,22 @@ use std::cmp::min;
 
 use rand::RngExt;
 
-use crate::{EncounterOp, monsters::Enemy, relics::RelicImpl};
+use crate::{Effect, EncounterOp, monsters::Enemy, relics::RelicImpl};
 
 pub static RING_OF_THE_SNAKE: RelicImpl = RelicImpl {
     ..
 };
 
 pub static BLOOD_VIAL: RelicImpl = RelicImpl {
-    combat_started: Some(|counter, encounter| -> u32 {
-        encounter.player.health = min(encounter.run.max_health, encounter.player.health + 2);
-        counter
+    combat_started: Some(|encounter| -> Vec<EncounterOp> {
+        vec![EncounterOp::SetHealth(min(encounter.run.max_health, encounter.player.health + 2))]
     }),
     ..
 };
 
 pub static VAJRA: RelicImpl = RelicImpl {
-    combat_started: Some(|_, encounter| -> u32 {
-        encounter.player.effects.push(crate::Effect::Strength(1));
-        0
+    combat_started: Some(|_| -> Vec<EncounterOp> {
+        vec![EncounterOp::SelfPush(Effect::Strength(1))]
     }),
     ..
 };

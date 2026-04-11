@@ -2,7 +2,7 @@ use std::{cmp::min, collections::HashMap};
 
 use rand::seq::SliceRandom;
 
-use crate::{Damageable, Effect, Effectable, EncounterOp, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, monsters::{Enemy, Moves}, relics::{self, RELICS, Relics}};
+use crate::{Damageable, Effect, Effectable, EncounterOp, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, monsters::{Enemy, Moves}, relics::{RELICS, Relics}};
 
 pub struct Player {
     pub energy: u32,
@@ -70,8 +70,7 @@ impl<'a> Encounter<'a> {
         if self.turn == 1 {
             for relic in self.relics.clone() { // booooooo
                 if let Some(combat_started) = RELICS[&relic.0].combat_started {
-                    let new = combat_started(relic.1, self);
-                    self.relics.insert(relic.0, new);
+                    self.do_encounter_ops(combat_started(self));
                 }
             }
         }
@@ -267,6 +266,15 @@ impl<'a> Encounter<'a> {
                 },
                 EncounterOp::Damage(target_id, damage) => {
                     self.basic_attack(target_id, damage);
+                }
+                EncounterOp::SetHealth(hp) => {
+                    self.player.health = hp;
+                }
+                EncounterOp::GainBlock(b) => {
+                    self.player.block += b;
+                }
+                EncounterOp::SelfPush(fx) => {
+                    self.player.effects.push(fx);
                 }
             }
         }

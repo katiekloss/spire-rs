@@ -24,7 +24,10 @@ pub enum EncounterOp {
     /// Direct unamped damage (.1) towards an enemy ID (.0)
     Damage(u32, u32),
     /// Set a relic counter to a specific value
-    SetCounter(Relics, u32)
+    SetCounter(Relics, u32),
+    SetHealth(u32),
+    GainBlock(u32),
+    SelfPush(Effect)
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
