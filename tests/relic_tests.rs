@@ -75,3 +75,13 @@ fn mercury_hourglass_damages_enemies() {
     encounter.begin_turn();
     assert_ne!(encounter.enemies[0].health, starting_health);
 }
+
+#[test]
+fn mango_raises_max_hp() {
+    let mut run = start_run();
+    run.health = 100;
+    run.max_health = 100;
+    run.pickup_relic(Relics::Mango);
+    assert_eq!(run.max_health, 114);
+    assert_eq!(run.health, 114);
+}
