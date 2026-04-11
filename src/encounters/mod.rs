@@ -66,12 +66,22 @@ impl<'a> Encounter<'a> {
         self.turn += 1;
 
         if self.turn == 1 {
-            for relic in self.run.relics.clone() { // booooooo
-                if let Some(combat_started) = RELICS[&relic.0].combat_started {
-                    self.do_encounter_ops(combat_started(self));
+            let mut ops = vec![];
+            for relic in self.run.relics.keys() {
+                if let Some(combat_started) = RELICS[&relic].combat_started {
+                    ops.append(&mut combat_started(self));
                 }
             }
+            self.do_encounter_ops(ops);
         }
+
+        let mut ops = vec![];
+        for relic in self.run.relics.keys() {
+            if let Some(turn_started) = RELICS[&relic].turn_started {
+                ops.append(&mut turn_started(self));
+            }
+        }
+        self.do_encounter_ops(ops);
 
         // Tick effects
         let mut effects = vec![];
@@ -273,6 +283,10 @@ impl<'a> Encounter<'a> {
                 }
                 EncounterOp::SelfPush(fx) => {
                     self.player.effects.push(fx);
+                },
+                EncounterOp::TargetPush(enemy_id, fx) => {
+                    let enemy = self.enemies.iter_mut().filter(|e| e.id == enemy_id).nth(0).unwrap();
+                    enemy.effects.push(fx);
                 }
             }
         }

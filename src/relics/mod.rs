@@ -11,6 +11,8 @@ pub static RELICS: LazyLock<HashMap<Relics, &'static RelicImpl>> = LazyLock::new
     m.insert(Relics::Vajra, &VAJRA);
     m.insert(Relics::Tingsha, &TINGSHA);
     m.insert(Relics::Anchor, &ANCHOR);
+    m.insert(Relics::BagOfMarbles, &BAG_OF_MARBLES);
+    m.insert(Relics::MercuryHourglass, &MERCURY_HOURGLASS);
     m
 });
 
@@ -20,13 +22,17 @@ pub enum Relics {
     BloodVial,
     Vajra,
     Tingsha,
-    Anchor
+    Anchor,
+    BagOfMarbles,
+    MercuryHourglass
 }
 
 pub type CombatStartHandler = fn(encounter: &Encounter) -> Vec<EncounterOp>;
+pub type TurnStartHandler = fn(encounter: &Encounter) -> Vec<EncounterOp>;
 pub type DiscardHandler = fn(card: &CardInstance, encounter: &Encounter) -> Vec<EncounterOp>;
 
 pub struct RelicImpl {
     pub combat_started: Option<CombatStartHandler> = None,
+    pub turn_started: Option<TurnStartHandler> = None,
     pub card_discarded: Option<DiscardHandler> = None
 }

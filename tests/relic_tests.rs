@@ -56,3 +56,22 @@ fn tingsha_damages_enemies() {
 
     assert_ne!(encounter.enemies[0].health, starting_health);
 }
+
+#[test]
+fn mercury_hourglass_damages_enemies() {
+    let mut run = start_run();
+    run.relics.insert(Relics::MercuryHourglass, 0);
+
+    let mut encounter = Encounter::new(&mut run);
+    encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
+
+    let starting_health = encounter.enemies[0].health;
+    encounter.begin_turn();
+    assert_ne!(encounter.enemies[0].health, starting_health);
+
+    let starting_health = encounter.enemies[0].health;
+    encounter.yield_turn();
+    encounter.end_turn();
+    encounter.begin_turn();
+    assert_ne!(encounter.enemies[0].health, starting_health);
+}
