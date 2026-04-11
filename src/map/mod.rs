@@ -34,8 +34,19 @@ impl MapGenerator {
             RoomType::Encounter(vec![Monsters::FuzzyWurmCrawler], rng.random_range(10..20)),
             RoomType::Encounter(vec![Monsters::SmallLeafSlime, Monsters::MediumLeafSlime, Monsters::SmallTwigSlime, Monsters::MediumTwigSlime], rng.random_range(10..20)),
             RoomType::Encounter(vec![Monsters::MediumLeafSlime, Monsters::FuzzyWurmCrawler], rng.random_range(10..20)),
-            RoomType::Treasure(Relics::RingOfTheSnake, rng.random_range(42..52)),
+            RoomType::Encounter(vec![Monsters::MediumLeafSlime, Monsters::FuzzyWurmCrawler], rng.random_range(10..20)), // new monster here
+            RoomType::Rest,
             RoomType::Elite(vec![Monsters::Byrdonis], rng.random_range(35..45)),
+            RoomType::Encounter(vec![Monsters::SmallLeafSlime, Monsters::MediumLeafSlime, Monsters::SmallTwigSlime, Monsters::MediumTwigSlime], rng.random_range(10..20)),
+            RoomType::Rest,
+            RoomType::Treasure(Relics::RingOfTheSnake, rng.random_range(42..52)),
+            RoomType::Encounter(vec![Monsters::MediumLeafSlime, Monsters::FuzzyWurmCrawler], rng.random_range(10..20)),
+            RoomType::Rest,
+            RoomType::Encounter(vec![Monsters::SmallLeafSlime, Monsters::MediumLeafSlime, Monsters::SmallTwigSlime, Monsters::MediumTwigSlime], rng.random_range(10..20)),
+            RoomType::Elite(vec![Monsters::Byrdonis], rng.random_range(35..45)),
+            RoomType::Encounter(vec![Monsters::MediumLeafSlime, Monsters::FuzzyWurmCrawler], rng.random_range(10..20)),
+            RoomType::Rest,
+            // boss
         ];
 
         let mut current_room = MapRoom {
