@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use rand::seq::SliceRandom;
 
-use crate::{Damageable, Effect, Effectable, EncounterOp, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, core::{Encounter, Player}, monsters::{Enemy, Moves}, relics::{PlayTarget, RELICS, Relics}};
+use crate::{Damageable, Effect, Effectable, EncounterOp, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, core::{Encounter, Player}, monsters::{Enemy, EnemyMoves, Moves}, relics::{PlayTarget, RELICS, Relics}};
 
 impl Effectable for Player {
     fn get_effects(&self) -> &Vec<Effect> {
@@ -280,6 +280,14 @@ impl<'a> Encounter<'a> {
                     let enemy = self.enemies.iter_mut().filter(|e| e.id == enemy_id).nth(0).unwrap();
                     enemy.effects.push(fx);
                 },
+                EncounterOp::AttackPlayer(enemy_id, dmg) => {
+                    let enemy = self.enemies.iter().filter(|e| e.id == enemy_id).nth(0).unwrap();
+                    let dmg = Self::query_attack_damage(enemy, &self.player, dmg);
+                    Self::resolve_attack(&mut self.player, dmg);
+                },
+                EncounterOp::Materialize(card) => {
+                    self.draw_pile.push(CardInstance::new(card));
+                },
                 EncounterOp::Play(_) => {}
             }
             
@@ -311,26 +319,44 @@ impl<'a> Encounter<'a> {
     }
 
     fn resolve_enemies(&mut self) {
-        for enemy in self.enemies.iter_mut().filter(|e| e.health > 0) {
-            for mv in &enemy.moves[enemy.move_idx] {
-                match mv {
-                    Moves::Attack(dmg) => {
-                        let dmg = Self::query_attack_damage(enemy, &self.player, *dmg);
-                        Self::resolve_attack(&mut self.player, dmg);
+        let enemy_ops: Vec<Vec<EncounterOp>> = self.enemies.iter().filter(|e| e.health > 0)
+            .map(|e| {
+                match &e.moves {
+                    EnemyMoves::Static(moves) => {
+                        let mut ops = vec![];
+                        for mv in moves[e.move_idx].iter() {
+                            ops.push(match mv {
+                                Moves::Attack(dmg) => {
+                                    EncounterOp::AttackPlayer(e.id, *dmg)
+                                },
+                                Moves::Buff(effect) => {
+                                    EncounterOp::ApplyTarget(e.id, *effect)
+                                },
+                                Moves::Debuff(effect) => {
+                                    EncounterOp::ApplySelf(*effect)
+                                },
+                                Moves::StatusCard(card) => {
+                                    EncounterOp::Materialize(*card)
+                                }
+                            });
+                        }
+                        ops
                     },
-                    Moves::Buff(effect) => {
-                        enemy.effects.push(effect.clone());
-                    },
-                    Moves::Debuff(effect) => {
-                        self.player.effects.push(effect.clone());
-                    },
-                    Moves::StatusCard(card) => {
-                        self.draw_pile.push(CardInstance::new(*card));
+                    EnemyMoves::Custom(handler) => {
+                        handler(self)
                     }
                 }
-            }
+            })
+            .collect();
 
-            enemy.move_idx = (enemy.move_idx + 1) % enemy.moves.len();
+        for set in enemy_ops {
+            self.do_encounter_ops(set);
+        }
+
+        for enemy in self.enemies.iter_mut().filter(|e| e.health > 0) {
+            if let EnemyMoves::Static(moves) = &enemy.moves {
+                enemy.move_idx = (enemy.move_idx + 1) % moves.len();
+            }
         }
     }
 
@@ -389,17 +415,22 @@ impl<'a> Encounter<'a> {
 
     // I dislike this but the player needs a way to see the
     // effective attack damage without doing it themselves.
-    pub fn get_enemy_intent(&self, enemy: &Enemy) -> Vec<Moves> {
-        enemy.moves[enemy.move_idx].iter()
-            .map(|mv| {
-                match mv {
-                    Moves::Attack(dmg) => {
-                        Moves::Attack(Self::query_attack_damage(enemy, &self.player, *dmg))
-                    }
-                    x => x.clone()
-                }
-            })
-            .collect()
+    pub fn get_enemy_intent(&self, enemy: &Enemy) -> Vec<EncounterOp> {
+        match &enemy.moves {
+            EnemyMoves::Static(moves) => {
+                moves[enemy.move_idx].iter()
+                    .map(|mv| {
+                        match mv {
+                            Moves::Attack(dmg) => {
+                                EncounterOp::AttackPlayer(enemy.id, Self::query_attack_damage(enemy, &self.player, *dmg))
+                            },
+                            _ => EncounterOp::Play(crate::cards::library::Card::Acrobatics)
+                        }
+                    })
+                    .collect()
+            },
+            EnemyMoves::Custom(handler) => handler(self)
+        }
     }
 }
 

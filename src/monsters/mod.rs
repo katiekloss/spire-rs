@@ -2,59 +2,71 @@ use std::{collections::HashMap, sync::{LazyLock, Mutex}};
 
 use rand::RngExt;
 
-use crate::{Damageable, Effect, Effectable, Target, Team, cards::library::Card};
+use crate::{Damageable, Effect, Effectable, EncounterOp, Target, Team, cards::library::Card, core::Encounter};
 
 static ENEMY_ID: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(1)); // the player is 0
 static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
     let mut m = HashMap::new();
     m.insert(Monsters::FuzzyWurmCrawler, MonsterData {
         health: (55, 57),
-        moves: vec![
+        moves: EnemyMoves::Static(vec![
             vec![Moves::Attack(4)],
             vec![Moves::Attack(4)],
-            vec![Moves::Buff(Effect::Strength(7))]],
+            vec![Moves::Buff(Effect::Strength(7))]]),
         starting_effects: vec![]
     });
     m.insert(Monsters::SmallLeafSlime, MonsterData {
         health: (11, 15),
-        moves: vec![
+        moves: EnemyMoves::Static(vec![
             vec![Moves::Attack(3)],
             vec![Moves::StatusCard(Card::Slimed)]
-        ],
+        ]),
         starting_effects: vec![]
     });
     m.insert(Monsters::MediumLeafSlime, MonsterData {
         health: (32, 35),
-        moves: vec![
+        moves: EnemyMoves::Static(vec![
             vec![Moves::Attack(8)],
             vec![Moves::StatusCard(Card::Slimed)]
-        ],
+        ]),
         starting_effects: vec![]
     });
     m.insert(Monsters::SmallTwigSlime, MonsterData {
         health: (7, 11),
-        moves: vec![
+        moves: EnemyMoves::Static(vec![
             vec![Moves::Attack(4)]
-        ],
+        ]),
         starting_effects: vec![]
     });
     m.insert(Monsters::MediumTwigSlime, MonsterData {
         health: (26, 28),
-        moves: vec![
+        moves: EnemyMoves::Static(vec![
             vec![Moves::Attack(11)],
             vec![Moves::StatusCard(Card::Slimed)]
-        ],
+        ]),
         starting_effects: vec![]
     });
     m.insert(Monsters::Byrdonis, MonsterData {
         health: (91, 94),
-        moves: vec![
+        moves: EnemyMoves::Static(vec![
             vec![Moves::Attack(3), Moves::Attack(3), Moves::Attack(3)],
             vec![Moves::Attack(16)]
-        ],
+        ]),
         starting_effects: vec![
             Effect::Territorial(1)
         ]
+    });
+    m.insert(Monsters::BygoneEffigy, MonsterData {
+        health: (127, 127),
+        moves: EnemyMoves::Custom(|encounter| {
+            match encounter.turn {
+                1 => vec![],
+                2 => vec![EncounterOp::ApplyTarget(encounter.enemies[0].id, Effect::Strength(10))],
+                3 => vec![],
+                _ => vec![EncounterOp::AttackPlayer(encounter.enemies[0].id, 15)]
+            }
+        }),
+        starting_effects: vec![]
     });
     m
 });
@@ -66,7 +78,8 @@ pub enum Monsters {
     MediumLeafSlime,
     SmallTwigSlime,
     MediumTwigSlime,
-    Byrdonis
+    Byrdonis,
+    BygoneEffigy
 }
 
 #[derive(Clone, Debug)]
@@ -81,8 +94,16 @@ type HealthRange = (u32, u32);
 
 pub struct MonsterData {
     health: HealthRange,
-    moves: Vec<Vec<Moves>>,
+    moves: EnemyMoves,
     starting_effects: Vec<Effect>
+}
+
+type CustomMoveHandler = fn(&Encounter) -> Vec<EncounterOp>;
+
+#[derive(Clone)]
+pub enum EnemyMoves {
+    Static(Vec<Vec<Moves>>),
+    Custom(CustomMoveHandler)
 }
 
 pub struct Enemy {
@@ -92,7 +113,7 @@ pub struct Enemy {
     pub block: u32,
     pub effects: Vec<Effect>,
     pub move_idx: usize,
-    pub moves: Vec<Vec<Moves>>
+    pub moves: EnemyMoves,
 }
 
 impl Enemy {

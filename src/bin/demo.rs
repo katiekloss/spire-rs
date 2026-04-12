@@ -3,7 +3,7 @@
 use std::hash_map;
 
 use log::{debug, info, trace};
-use spire_rs::{Run, cards::{CardInstance, CardType, library::{CARDS, Card}}, core::Encounter, get_card, map::{MapGenerator, MapRoom, RoomType}, monsters::{Enemy, Monsters, Moves}, relics::Relics};
+use spire_rs::{EncounterOp, Run, cards::{CardInstance, CardType, library::{CARDS, Card}}, core::Encounter, get_card, map::{MapGenerator, MapRoom, RoomType}, monsters::{Enemy, Monsters}, relics::Relics};
 use std_logger::Config;
 
 fn main() {
@@ -109,7 +109,7 @@ fn run_encounter(mut encounter: Encounter) -> u32 {
         let attack_damage = {
             let mut d = 0;
             for i in encounter.get_enemy_intent(next_enemy) {
-                if let Moves::Attack(dmg) = i {
+                if let EncounterOp::AttackPlayer(_, dmg) = i {
                     d += dmg;
                 }
             }

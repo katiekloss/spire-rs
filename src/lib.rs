@@ -28,10 +28,13 @@ pub enum RunOp {
 }
 
 /// A request from a relic, power, or card to perform a write operation against the encounter
+#[derive(Debug)]
 pub enum EncounterOp {
     Play(Card),
     /// Direct unamped damage (.1) towards an enemy ID (.0)
     Damage(u32, u32),
+    /// .0 attacks the player, applying any amp effects to .1 damage
+    AttackPlayer(u32, u32),
     /// Set a relic counter to a specific value
     SetCounter(Relics, u32),
     SetHealth(u32),
@@ -39,7 +42,9 @@ pub enum EncounterOp {
     /// Apply an effect to the player
     ApplySelf(Effect),
     /// Apply an effect to an enemy by ID
-    ApplyTarget(u32, Effect)
+    ApplyTarget(u32, Effect),
+    /// Create a new instance of a card in the player's draw pile
+    Materialize(Card)
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]

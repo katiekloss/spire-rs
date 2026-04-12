@@ -2,7 +2,7 @@
 
 use std::{assert_matches, collections::HashMap};
 
-use spire_rs::{Effect, Run, cards::{CardInstance, library::Card}, core::Encounter, get_card, monsters::{Enemy, Monsters, Moves}};
+use spire_rs::{Effect, EncounterOp, Run, cards::{CardInstance, library::Card}, core::Encounter, get_card, monsters::{Enemy, Monsters}};
 
 fn start_run() -> Run {
     let run = Run {
@@ -88,7 +88,7 @@ fn vulnerable_multiplies_attack_damage() {
     encounter.player.effects.push(Effect::Vulnerable(2));
     encounter.begin_turn();
 
-    assert_matches!(encounter.get_enemy_intent(&encounter.enemies[0])[..], [Moves::Attack(6)]);
+    assert_matches!(encounter.get_enemy_intent(&encounter.enemies[0])[..], [EncounterOp::AttackPlayer(_, 6)]);
     encounter.play(get_card!(Card::SilentStrike, encounter.hand).unwrap().id, encounter.enemies[0].id, vec![], &vec![]);
 
     assert_eq!(encounter.enemies[0].health, health - 9);

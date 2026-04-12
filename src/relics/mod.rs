@@ -18,7 +18,7 @@ pub static RELICS: LazyLock<HashMap<Relics, &'static RelicImpl>> = LazyLock::new
     m
 });
 
-#[derive(PartialEq, Eq, Clone, Hash, Copy)]
+#[derive(PartialEq, Eq, Clone, Hash, Copy, Debug)]
 pub enum Relics {
     RingOfTheSnake,
     BloodVial,
