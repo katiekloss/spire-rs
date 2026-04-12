@@ -1,4 +1,4 @@
-use crate::{Effect, Run, cards::CardInstance, monsters::Enemy};
+use crate::{Effect, EncounterOp, Run, cards::CardInstance, monsters::Enemy};
 
 pub mod encounter;
 pub mod run;
@@ -11,6 +11,8 @@ pub struct Encounter<'a> {
     pub hand: Vec<CardInstance>,
     pub discard_pile: Vec<CardInstance>,
     pub exhaust_pile: Vec<CardInstance>,
+
+    pub this_turn: Vec<EncounterOp>,
 
     pub turn: u32,
     pub enemies: Vec<Enemy>,

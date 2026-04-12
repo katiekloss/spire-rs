@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use rand::seq::SliceRandom;
 
-use crate::{Damageable, Effect, Effectable, EncounterOp, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, core::{Encounter, Player}, monsters::{Enemy, Moves}, relics::{RELICS, Relics}};
+use crate::{Damageable, Effect, Effectable, EncounterOp, Keywords, Run, Target, Team, cards::{CardAction, CardInstance, CardType, library::CARDS}, core::{Encounter, Player}, monsters::{Enemy, Moves}, relics::{PlayTarget, RELICS, Relics}};
 
 impl Effectable for Player {
     fn get_effects(&self) -> &Vec<Effect> {
@@ -37,12 +37,14 @@ impl<'a> Encounter<'a> {
                 energy: 3,
                 block: 0,
             },
-            run
+            run,
+            this_turn: vec![]
     }}
     
     pub fn begin_turn(&mut self) {
         assert_eq!(self.player.block, 0, "Previous turn wasn't committed");
 
+        self.this_turn.clear();
         self.turn += 1;
 
         if self.turn == 1 {
@@ -100,7 +102,7 @@ impl<'a> Encounter<'a> {
     }
 
     fn draw(&mut self, draw_size: usize) {
-            let hand_size = min(draw_size, self.draw_pile.len() + self.discard_pile.len());
+        let hand_size = min(draw_size, self.draw_pile.len() + self.discard_pile.len());
         
         'hand: for _ in 0..hand_size {
             let card = match self.draw_pile.pop() {
@@ -142,6 +144,8 @@ impl<'a> Encounter<'a> {
     pub fn play(&mut self, card: u32, target_id: u32, other_cards: Vec<u32>, stack: &Vec<CardAction>) {
         let mut card = self.hand.swap_remove(self.find_card_in_hand(card));
 
+        self.this_turn.push(EncounterOp::Play(card.card));
+
         // maybe macro this
         let card_played = 'get: {
             for effect in &self.player.effects {
@@ -151,6 +155,14 @@ impl<'a> Encounter<'a> {
             }
             None
         };
+
+        let mut ops = vec![];
+        for relic in self.run.relics.keys() {
+            if let Some(played) = &RELICS[&relic].card_played {
+                ops.append(&mut played(&card, PlayTarget::None, self));
+            }
+        }
+        self.do_encounter_ops(ops);
 
         if let Some(handler) = card_played {
             handler(&card, self);
@@ -267,8 +279,11 @@ impl<'a> Encounter<'a> {
                 EncounterOp::ApplyTarget(enemy_id, fx) => {
                     let enemy = self.enemies.iter_mut().filter(|e| e.id == enemy_id).nth(0).unwrap();
                     enemy.effects.push(fx);
-                }
+                },
+                EncounterOp::Play(_) => {}
             }
+            
+            self.this_turn.push(op);
         }
     }
 

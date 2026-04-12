@@ -85,3 +85,50 @@ fn mango_raises_max_hp() {
     assert_eq!(run.max_health, 114);
     assert_eq!(run.health, 114);
 }
+
+#[test]
+fn ornamental_fan_applies_block() {
+    let mut run = start_run();
+    for _ in 0..7 {
+        run.deck.push(CardInstance::new(Card::SilentStrike));
+    }
+    run.pickup_relic(Relics::OrnamentalFan);
+    run.pickup_relic(Relics::RingOfTheSnake);
+
+    let mut encounter = Encounter::new(&mut run);
+    encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
+    encounter.enemies[0].health = 100;
+
+    encounter.begin_turn();
+    encounter.player.energy = 20;
+    encounter.play(get_card!(Card::SilentStrike, encounter.hand).unwrap().id, encounter.enemies[0].id, vec![], &vec![]);
+    assert_eq!(encounter.player.block, 0);
+
+    encounter.play(get_card!(Card::SilentStrike, encounter.hand).unwrap().id, encounter.enemies[0].id, vec![], &vec![]);
+    assert_eq!(encounter.player.block, 0);
+
+    encounter.play(get_card!(Card::SilentStrike, encounter.hand).unwrap().id, encounter.enemies[0].id, vec![], &vec![]);
+    assert_eq!(encounter.player.block, 3);
+
+    encounter.play(get_card!(Card::SilentStrike, encounter.hand).unwrap().id, encounter.enemies[0].id, vec![], &vec![]);
+    assert_eq!(encounter.player.block, 3);
+
+    encounter.play(get_card!(Card::SilentStrike, encounter.hand).unwrap().id, encounter.enemies[0].id, vec![], &vec![]);
+    assert_eq!(encounter.player.block, 3);
+
+    encounter.play(get_card!(Card::SilentStrike, encounter.hand).unwrap().id, encounter.enemies[0].id, vec![], &vec![]);
+    assert_eq!(encounter.player.block, 6);
+}
+
+#[test]
+fn ornamental_fan_ignores_skills() {
+    let mut run = start_run();
+    run.deck.push(CardInstance::new(Card::SilentDefend));
+    run.pickup_relic(Relics::OrnamentalFan);
+
+    let mut encounter = Encounter::new(&mut run);
+    encounter.begin_turn();
+    encounter.play(get_card!(Card::SilentDefend, encounter.hand).unwrap().id, 0, vec![], &vec![]);
+
+    assert_eq!(run.relics[&Relics::OrnamentalFan], 0);
+}

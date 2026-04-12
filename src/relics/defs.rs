@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use rand::RngExt;
 
-use crate::{Effect, EncounterOp, RunOp, monsters::Enemy, relics::RelicImpl};
+use crate::{Effect, EncounterOp, RunOp, cards::CardType, monsters::Enemy, relics::{RelicImpl, Relics}};
 
 pub static RING_OF_THE_SNAKE: RelicImpl = RelicImpl {
     ..
@@ -39,6 +39,26 @@ pub static MANGO: RelicImpl = RelicImpl {
 pub static MERCURY_HOURGLASS: RelicImpl = RelicImpl {
     turn_started: Some(|encounter| -> Vec<EncounterOp> {
         encounter.enemies.iter().filter(|e| e.health > 0).map(|e| EncounterOp::Damage(e.id, 3)).collect()
+    }),
+    ..
+};
+
+pub static ORNAMENTAL_FAN: RelicImpl = RelicImpl {
+    combat_started: Some(|_| -> Vec<EncounterOp> {
+        vec![EncounterOp::SetCounter(Relics::OrnamentalFan, 0)]
+    }),
+    card_played: Some(|card, _, encounter| -> Vec<EncounterOp> {
+        let counter = encounter.run.relics[&Relics::OrnamentalFan];
+        if matches!(card.typ, CardType::Attack) {
+            if counter == 2 {
+                return vec![EncounterOp::GainBlock(3), EncounterOp::SetCounter(Relics::OrnamentalFan, 0)];
+            }
+            else {
+                return vec![EncounterOp::SetCounter(Relics::OrnamentalFan, counter + 1)];
+            }
+        }
+        
+        vec![]
     }),
     ..
 };

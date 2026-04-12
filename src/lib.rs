@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use crate::{cards::CardInstance, powers::PowerImpl, relics::Relics};
+use crate::{cards::{CardInstance, library::Card}, powers::PowerImpl, relics::Relics};
 
 pub mod cards;
 pub mod relics;
@@ -29,6 +29,7 @@ pub enum RunOp {
 
 /// A request from a relic, power, or card to perform a write operation against the encounter
 pub enum EncounterOp {
+    Play(Card),
     /// Direct unamped damage (.1) towards an enemy ID (.0)
     Damage(u32, u32),
     /// Set a relic counter to a specific value
