@@ -343,7 +343,7 @@ impl<'a> Encounter<'a> {
                         ops
                     },
                     EnemyMoves::Custom(handler) => {
-                        handler(self)
+                        handler(self, e)
                     }
                 }
             })
@@ -429,7 +429,7 @@ impl<'a> Encounter<'a> {
                     })
                     .collect()
             },
-            EnemyMoves::Custom(handler) => handler(self)
+            EnemyMoves::Custom(handler) => handler(self, enemy)
         }
     }
 }

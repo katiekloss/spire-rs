@@ -1,5 +1,5 @@
 
-use rand::{RngExt, rngs::ThreadRng};
+use rand::{RngExt, distr::Uniform, rngs::ThreadRng};
 
 use crate::{monsters::Monsters, relics::Relics};
 
@@ -65,18 +65,28 @@ impl MapGenerator {
     }
 
     fn weak(rng: &mut ThreadRng) -> RoomType {
-        RoomType::Encounter(vec![Monsters::FuzzyWurmCrawler], rng.random_range(10..20))
+        match rng.sample(Uniform::new_inclusive(1, 3).unwrap()) {
+            1 => RoomType::Encounter(vec![Monsters::FuzzyWurmCrawler], rng.random_range(10..=20)),
+            2 => RoomType::Encounter(vec![Monsters::ShrinkerBeetle], rng.random_range(10..=20)),
+            3 => RoomType::Encounter(vec![Monsters::SmallLeafSlime, Monsters::MediumLeafSlime, Monsters::SmallTwigSlime], rng.random_range(10..=20)),
+            _ => unreachable!()
+        }
     }
 
     fn normal(rng: &mut ThreadRng) -> RoomType {
-        RoomType::Encounter(vec![Monsters::SmallLeafSlime, Monsters::MediumLeafSlime, Monsters::SmallTwigSlime, Monsters::MediumTwigSlime], rng.random_range(10..20))
+        match rng.sample(Uniform::new_inclusive(1, 3).unwrap()) {
+            1 | 2 => RoomType::Encounter(vec![Monsters::SmallLeafSlime, Monsters::MediumLeafSlime, Monsters::SmallTwigSlime, Monsters::MediumTwigSlime], rng.random_range(10..=20)),
+            // cubex construct
+            3 => RoomType::Encounter(vec![Monsters::ShrinkerBeetle, Monsters::FuzzyWurmCrawler], rng.random_range(10..=20)),
+            _ => unreachable!()
+        }
     }
 
     fn elite(rng: &mut ThreadRng) -> RoomType {
         if rng.random_bool(0.5) {
-            RoomType::Elite(vec![Monsters::Byrdonis], rng.random_range(35..45))
+            RoomType::Elite(vec![Monsters::Byrdonis], rng.random_range(35..=45))
         } else {
-            RoomType::Elite(vec![Monsters::BygoneEffigy], rng.random_range(35..45))
+            RoomType::Elite(vec![Monsters::BygoneEffigy], rng.random_range(35..=45))
         }
     }
 }

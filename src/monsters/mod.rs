@@ -11,8 +11,21 @@ static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
         health: 55..=57,
         moves: EnemyMoves::Static(vec![
             vec![Moves::Attack(4)],
-            vec![Moves::Attack(4)],
-            vec![Moves::Buff(Effect::Strength(7))]]),
+            vec![Moves::Buff(Effect::Strength(7))],
+            vec![Moves::Attack(4)]]),
+        starting_effects: vec![]
+    });
+    m.insert(Monsters::ShrinkerBeetle, MonsterData {
+        health: 38..=40,
+        moves: EnemyMoves::Custom(|e, me| -> Vec<EncounterOp> {
+            if e.turn == 1 {
+                vec![EncounterOp::ApplySelf(Effect::Weak(99))]
+            } else if e.turn % 2 == 0 {
+                vec![EncounterOp::AttackPlayer(me.id, 7)]
+            } else {
+                vec![EncounterOp::AttackPlayer(me.id, 13)]
+            }
+        }),
         starting_effects: vec![]
     });
     m.insert(Monsters::SmallLeafSlime, MonsterData {
@@ -58,12 +71,12 @@ static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
     });
     m.insert(Monsters::BygoneEffigy, MonsterData {
         health: 127..=127,
-        moves: EnemyMoves::Custom(|encounter| {
+        moves: EnemyMoves::Custom(|encounter, me| {
             match encounter.turn {
                 1 => vec![],
-                2 => vec![EncounterOp::ApplyTarget(encounter.enemies[0].id, Effect::Strength(10))],
+                2 => vec![EncounterOp::ApplyTarget(me.id, Effect::Strength(10))],
                 3 => vec![],
-                _ => vec![EncounterOp::AttackPlayer(encounter.enemies[0].id, 15)]
+                _ => vec![EncounterOp::AttackPlayer(me.id, 15)]
             }
         }),
         starting_effects: vec![]
@@ -79,7 +92,8 @@ pub enum Monsters {
     SmallTwigSlime,
     MediumTwigSlime,
     Byrdonis,
-    BygoneEffigy
+    BygoneEffigy,
+    ShrinkerBeetle
 }
 
 #[derive(Clone, Debug)]
@@ -96,7 +110,7 @@ pub struct MonsterData {
     starting_effects: Vec<Effect>
 }
 
-type CustomMoveHandler = fn(&Encounter) -> Vec<EncounterOp>;
+type CustomMoveHandler = fn(&Encounter, &Enemy) -> Vec<EncounterOp>;
 
 #[derive(Clone)]
 pub enum EnemyMoves {
