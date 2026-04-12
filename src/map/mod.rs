@@ -1,4 +1,5 @@
-use rand::RngExt;
+
+use rand::{RngExt, rngs::ThreadRng};
 
 use crate::{monsters::Monsters, relics::Relics};
 
@@ -31,20 +32,19 @@ impl MapGenerator {
 
         let rooms = vec![
             RoomType::Ancient(Ancients::Neow),
-            RoomType::Encounter(vec![Monsters::FuzzyWurmCrawler], rng.random_range(10..20)),
-            RoomType::Encounter(vec![Monsters::SmallLeafSlime, Monsters::MediumLeafSlime, Monsters::SmallTwigSlime, Monsters::MediumTwigSlime], rng.random_range(10..20)),
-            RoomType::Encounter(vec![Monsters::MediumLeafSlime, Monsters::FuzzyWurmCrawler], rng.random_range(10..20)),
-            RoomType::Encounter(vec![Monsters::MediumLeafSlime, Monsters::FuzzyWurmCrawler], rng.random_range(10..20)), // new monster here
+            Self::weak(&mut rng),
+            Self::weak(&mut rng),
+            Self::weak(&mut rng), // new monster here
             RoomType::Rest,
-            RoomType::Elite(vec![Monsters::Byrdonis], rng.random_range(35..45)),
-            RoomType::Encounter(vec![Monsters::SmallLeafSlime, Monsters::MediumLeafSlime, Monsters::SmallTwigSlime, Monsters::MediumTwigSlime], rng.random_range(10..20)),
+            Self::elite(&mut rng),
+            Self::normal(&mut rng),
             RoomType::Rest,
             RoomType::Treasure(Relics::RingOfTheSnake, rng.random_range(42..52)),
-            RoomType::Encounter(vec![Monsters::MediumLeafSlime, Monsters::FuzzyWurmCrawler], rng.random_range(10..20)),
+            Self::normal(&mut rng),
             RoomType::Rest,
-            RoomType::Encounter(vec![Monsters::SmallLeafSlime, Monsters::MediumLeafSlime, Monsters::SmallTwigSlime, Monsters::MediumTwigSlime], rng.random_range(10..20)),
-            RoomType::Elite(vec![Monsters::Byrdonis], rng.random_range(35..45)),
-            RoomType::Encounter(vec![Monsters::MediumLeafSlime, Monsters::FuzzyWurmCrawler], rng.random_range(10..20)),
+            Self::normal(&mut rng),
+            Self::elite(&mut rng),
+            Self::normal(&mut rng),
             RoomType::Rest,
             // boss
         ];
@@ -62,5 +62,21 @@ impl MapGenerator {
         }
 
         current_room
+    }
+
+    fn weak(rng: &mut ThreadRng) -> RoomType {
+        RoomType::Encounter(vec![Monsters::FuzzyWurmCrawler], rng.random_range(10..20))
+    }
+
+    fn normal(rng: &mut ThreadRng) -> RoomType {
+        RoomType::Encounter(vec![Monsters::SmallLeafSlime, Monsters::MediumLeafSlime, Monsters::SmallTwigSlime, Monsters::MediumTwigSlime], rng.random_range(10..20))
+    }
+
+    fn elite(rng: &mut ThreadRng) -> RoomType {
+        if rng.random_bool(0.5) {
+            RoomType::Elite(vec![Monsters::Byrdonis], rng.random_range(35..45))
+        } else {
+            RoomType::Elite(vec![Monsters::BygoneEffigy], rng.random_range(35..45))
+        }
     }
 }
