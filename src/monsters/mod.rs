@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::{LazyLock, Mutex}};
+use std::{collections::HashMap, ops::RangeInclusive, sync::{LazyLock, Mutex}};
 
 use rand::RngExt;
 
@@ -8,7 +8,7 @@ static ENEMY_ID: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(1)); // the 
 static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
     let mut m = HashMap::new();
     m.insert(Monsters::FuzzyWurmCrawler, MonsterData {
-        health: (55, 57),
+        health: 55..=57,
         moves: EnemyMoves::Static(vec![
             vec![Moves::Attack(4)],
             vec![Moves::Attack(4)],
@@ -16,7 +16,7 @@ static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
         starting_effects: vec![]
     });
     m.insert(Monsters::SmallLeafSlime, MonsterData {
-        health: (11, 15),
+        health: 11..=15,
         moves: EnemyMoves::Static(vec![
             vec![Moves::Attack(3)],
             vec![Moves::StatusCard(Card::Slimed)]
@@ -24,7 +24,7 @@ static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
         starting_effects: vec![]
     });
     m.insert(Monsters::MediumLeafSlime, MonsterData {
-        health: (32, 35),
+        health: 32..=35,
         moves: EnemyMoves::Static(vec![
             vec![Moves::Attack(8)],
             vec![Moves::StatusCard(Card::Slimed)]
@@ -32,14 +32,14 @@ static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
         starting_effects: vec![]
     });
     m.insert(Monsters::SmallTwigSlime, MonsterData {
-        health: (7, 11),
+        health: 7..=11,
         moves: EnemyMoves::Static(vec![
             vec![Moves::Attack(4)]
         ]),
         starting_effects: vec![]
     });
     m.insert(Monsters::MediumTwigSlime, MonsterData {
-        health: (26, 28),
+        health: 26..=28,
         moves: EnemyMoves::Static(vec![
             vec![Moves::Attack(11)],
             vec![Moves::StatusCard(Card::Slimed)]
@@ -47,7 +47,7 @@ static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
         starting_effects: vec![]
     });
     m.insert(Monsters::Byrdonis, MonsterData {
-        health: (91, 94),
+        health: 91..=94,
         moves: EnemyMoves::Static(vec![
             vec![Moves::Attack(3), Moves::Attack(3), Moves::Attack(3)],
             vec![Moves::Attack(16)]
@@ -57,7 +57,7 @@ static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
         ]
     });
     m.insert(Monsters::BygoneEffigy, MonsterData {
-        health: (127, 127),
+        health: 127..=127,
         moves: EnemyMoves::Custom(|encounter| {
             match encounter.turn {
                 1 => vec![],
@@ -90,10 +90,8 @@ pub enum Moves {
     StatusCard(Card)
 }
 
-type HealthRange = (u32, u32);
-
 pub struct MonsterData {
-    health: HealthRange,
+    health: RangeInclusive<u32>,
     moves: EnemyMoves,
     starting_effects: Vec<Effect>
 }
@@ -122,7 +120,7 @@ impl Enemy {
         let def = &MONSTERS[&monster];
         Self {
             id: { let mut i = ENEMY_ID.lock().unwrap(); *i += 1; *i },
-            health: rng.random_range(def.health.0..def.health.1),
+            health: rng.random_range(def.health.clone()),
             moves: def.moves.clone(),
             effects: def.starting_effects.clone(),
             monster,
