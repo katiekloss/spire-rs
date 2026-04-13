@@ -23,7 +23,7 @@ fn hello_world() {
 
     run.relics.insert(spire_rs::relics::Relics::RingOfTheSnake, 0);
 
-    let mut encounter = Encounter::new(&mut run);
+    let mut encounter = Encounter::new(run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
 
     {

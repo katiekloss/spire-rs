@@ -22,7 +22,7 @@ mod card_tests {
         let mut run = start_run();
         run.deck.push(CardInstance::new(Card::Survivor));
         run.deck.push(CardInstance::new(Card::FlickFlack));
-        let mut encounter = Encounter::new(&mut run);
+        let mut encounter = Encounter::new(run);
         encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
 
         encounter.begin_turn();
@@ -47,7 +47,7 @@ mod card_tests {
             CardInstance::new(Card::SilentDefend),
             CardInstance::new(Card::SilentDefend)
         ]);
-        let mut encounter = Encounter::new(&mut run);
+        let mut encounter = Encounter::new(run);
 
         let acrobatics = 'get: loop {
             encounter.begin_turn();

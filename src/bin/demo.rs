@@ -3,7 +3,7 @@
 use std::hash_map;
 
 use log::{debug, info, trace};
-use spire_rs::{EncounterOp, Run, cards::{CardInstance, CardType, library::{CARDS, Card}}, core::Encounter, get_card, map::{MapGenerator, MapRoom, RoomType}, monsters::{Enemy, Monsters}, relics::Relics};
+use spire_rs::{EncounterOp, Run, cards::{CardInstance, CardType, library::{CARDS, Card}}, core::Encounter, get_card, map::{MapGenerator, MapRoom, RoomType}, monsters::Enemy, relics::Relics};
 use std_logger::Config;
 
 fn main() {
@@ -34,8 +34,8 @@ fn main() {
             run.deck.push(CardInstance::new(card));
 
             debug!("Starting simulation {i}");
-            let (health, floor) = run_simulation(&mut run, &MapGenerator::generate());
-            debug!("Simulation {i} ended on floor {floor} with {health} HP");
+            let run = run_simulation(run, &MapGenerator::generate());
+            debug!("Simulation {i} ended on floor {} with {} HP", run.floor, run.health);
             samples.push(run);
         }
 
@@ -48,7 +48,7 @@ fn main() {
     }
 }
 
-fn run_simulation(run: &mut Run, starting_room: &MapRoom) -> (u32, u32) {
+fn run_simulation(mut run: Run, starting_room: &MapRoom) -> Run {
     let mut next_room = starting_room.up_nodes.get(0);
 
     while run.health > 0 && let Some(room) = next_room {
@@ -58,7 +58,13 @@ fn run_simulation(run: &mut Run, starting_room: &MapRoom) -> (u32, u32) {
 
         match &room.t {
             RoomType::Encounter(monsters, gold) | RoomType::Elite(monsters, gold) => {
-                if !run_encounter_room(monsters, run, *gold) {
+                let mut encounter = Encounter::new(run);
+                encounter.enemies.append(&mut monsters.iter().map(|m| Enemy::new(m.clone())).collect());
+
+                run = run_encounter(encounter);
+                if run.health > 0 {
+                    run.gold += gold;
+                } else {
                     break;
                 }
             },
@@ -76,24 +82,10 @@ fn run_simulation(run: &mut Run, starting_room: &MapRoom) -> (u32, u32) {
         next_room = room.up_nodes.get(0);
     }
 
-    (run.health, run.floor)
+    run
 }
 
-/// Runs an encounter and returns whether the player is still alive afterward
-fn run_encounter_room(monsters: &[Monsters], run: &mut Run, reward: u32) -> bool {
-    let mut encounter = Encounter::new(run);
-    encounter.enemies.append(&mut monsters.iter().map(|m| Enemy::new(m.clone())).collect());
-
-    run.health = run_encounter(encounter);
-    if run.health > 0 {
-        run.gold += reward;
-        return true;
-    }
-
-    false
-}
-
-fn run_encounter(mut encounter: Encounter) -> u32 {
+fn run_encounter(mut encounter: Encounter) -> Run {
 
     loop {
         encounter.begin_turn();
@@ -103,7 +95,7 @@ fn run_encounter(mut encounter: Encounter) -> u32 {
 
         let next_enemy = encounter.enemies.iter().filter(|e| e.health > 0).nth(0);
         if let None = next_enemy {
-            return encounter.player.health;
+            return encounter.end();
         }
         let next_enemy = next_enemy.unwrap();
         let attack_damage = {
@@ -126,7 +118,7 @@ fn run_encounter(mut encounter: Encounter) -> u32 {
         encounter.end_turn();
 
         if encounter.player.health <= 0 || encounter.enemies.iter().map(|e| e.health).sum::<u32>() <= 0 {
-            return encounter.player.health;
+            return encounter.end();
         }
 
         debug!("Took {} damage", health - encounter.player.health);

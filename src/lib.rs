@@ -1,6 +1,7 @@
 #![feature(default_field_values)]
 
 use std::collections::HashMap;
+use std::hash::Hash;
 
 use crate::{cards::{CardInstance, library::Card}, powers::PowerImpl, relics::Relics};
 
@@ -11,7 +12,7 @@ pub mod core;
 pub mod map;
 pub mod powers;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Run {
     pub floor: u32,
     pub relics: HashMap<Relics, u32>,
@@ -21,6 +22,17 @@ pub struct Run {
     pub deck: Vec<CardInstance>,
 }
 
+impl Hash for Run {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.floor.hash(state);
+        //self.relics.hash(state);
+        self.health.hash(state);
+        self.gold.hash(state);
+        self.max_health.hash(state);
+        self.deck.hash(state);
+    }
+}
+
 /// A request to modify the run
 pub enum RunOp {
     /// Set the player's max health
@@ -28,7 +40,7 @@ pub enum RunOp {
 }
 
 /// A request from a relic, power, or card to perform a write operation against the encounter
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Hash)]
 pub enum EncounterOp {
     Play(Card),
     /// Direct unamped damage (.1) towards an enemy ID (.0)
@@ -47,7 +59,7 @@ pub enum EncounterOp {
     Materialize(Card)
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, Hash)]
 pub enum Effect {
     Strength(u32),
     Weak(u32),
@@ -78,7 +90,7 @@ pub enum Team {
     Enemy
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Hash)]
 pub enum Keywords {
     Eternal,
     Ethereal,

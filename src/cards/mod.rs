@@ -7,7 +7,7 @@ use crate::{Effect, Keywords, cards::library::{CARDS, Card}, core::Encounter};
 
 static CARD_IDS: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(0));
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Hash)]
 pub enum CardType {
     Skill,
     Power,
@@ -24,7 +24,7 @@ pub struct CardData {
     // secondary_cost: u8 // regent
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Hash)]
 pub struct CardInstance {
     pub id: u32, // TODO: this is gross ew yucky (but avoids the borrow checker)
     pub card: Card,
@@ -71,6 +71,8 @@ impl CardInstance {
 
 type PlayHandler = fn(card: &mut CardInstance, encounter: &mut Encounter);
 
+#[allow(unpredictable_function_pointer_comparisons)] // instances are used as statics
+#[derive(PartialEq, Hash)]
 pub struct CustomCard {
     /// Called whenever an instance of this card is played
     pub play: Option<PlayHandler>,

@@ -23,7 +23,7 @@ pub fn applying_strength_increases_damage() {
     run.deck.push(CardInstance::new(Card::SilentStrike));
     run.deck.push(CardInstance::new(Card::SilentStrike));
 
-    let mut encounter = Encounter::new(&mut run);
+    let mut encounter = Encounter::new(run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
     let health = encounter.enemies[0].health;
 
@@ -44,7 +44,7 @@ pub fn applying_weak_reduces_damage() {
     run.deck.push(CardInstance::new(Card::SilentStrike));
     run.deck.push(CardInstance::new(Card::SilentStrike));
 
-    let mut encounter = Encounter::new(&mut run);
+    let mut encounter = Encounter::new(run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
     let health = encounter.enemies[0].health;
 
@@ -61,8 +61,8 @@ pub fn applying_weak_reduces_damage() {
 
 #[test]
 pub fn applying_territorial_applies_strength() {
-    let mut run = start_run();
-    let mut encounter = Encounter::new(&mut run);
+    let run = start_run();
+    let mut encounter = Encounter::new(run);
     encounter.enemies.push(Enemy::new(Monsters::Byrdonis));
     
     encounter.begin_turn();

@@ -22,7 +22,7 @@ fn afterimage() {
     let mut run = start_run();
     run.deck.push(CardInstance::new(Card::SilentDefend));
 
-    let mut encounter = Encounter::new(&mut run);
+    let mut encounter = Encounter::new(run);
     encounter.player.effects.push(spire_rs::Effect::Custom(&AFTERIMAGE));
 
     encounter.begin_turn();

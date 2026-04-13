@@ -7,6 +7,7 @@ pub mod defs;
 type CardPlayed = fn(card: &CardInstance, encounter: &mut Encounter);
 type TurnEnded = fn(card: &CardInstance, encounter: &mut Encounter);
 
+#[derive(Hash)]
 pub struct PowerImpl {
     pub id: &'static str,
     pub card_played: Option<CardPlayed> = None,

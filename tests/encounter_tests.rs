@@ -19,8 +19,8 @@ fn start_run() -> Run {
 
 #[test]
 fn multiple_enemies_all_use_their_moves() {
-    let mut run = start_run();
-    let mut encounter = Encounter::new(&mut run);
+    let run = start_run();
+    let mut encounter = Encounter::new(run);
     encounter.enemies.push(Enemy::new(Monsters::SmallLeafSlime));
     encounter.enemies.push(Enemy::new(Monsters::MediumLeafSlime));
 
@@ -40,7 +40,7 @@ fn multiple_enemies_all_use_their_moves() {
 fn power_cards_vanish_on_play() {
     let mut run = start_run();
     run.deck.push(CardInstance::new(Card::Afterimage));
-    let mut encounter = Encounter::new(&mut run);
+    let mut encounter = Encounter::new(run);
     encounter.begin_turn();
     encounter.play(get_card!(Card::Afterimage, encounter.hand).unwrap().id, 0, vec![], &vec![]);
 
@@ -50,8 +50,8 @@ fn power_cards_vanish_on_play() {
 
 #[test]
 fn effects_tick_on_turn_start() {
-    let mut run = start_run();
-    let mut encounter = Encounter::new(&mut run);
+    let run = start_run();
+    let mut encounter = Encounter::new(run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
     encounter.enemies[0].effects.push(Effect::Vulnerable(2));
     encounter.player.effects.push(Effect::Vulnerable(2));
@@ -81,7 +81,7 @@ fn effects_tick_on_turn_start() {
 fn vulnerable_multiplies_attack_damage() {
     let mut run = start_run();
     run.deck.push(CardInstance::new(Card::SilentStrike));
-    let mut encounter = Encounter::new(&mut run);
+    let mut encounter = Encounter::new(run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
     let health = encounter.enemies[0].health;
     encounter.enemies[0].effects.push(Effect::Vulnerable(2));

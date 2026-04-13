@@ -22,7 +22,7 @@ fn blood_vial_adds_health() {
     let mut run = start_run();
     run.health = 90;
     run.relics.insert(Relics::BloodVial, 0);
-    let mut encounter = Encounter::new(&mut run);
+    let mut encounter = Encounter::new(run);
     encounter.begin_turn();
 
     assert_eq!(encounter.player.health, 92);
@@ -33,7 +33,7 @@ fn blood_vial_doesnt_exceed_max_health() {
     let mut run = start_run();
     run.health = 100;
     run.relics.insert(Relics::BloodVial, 0);
-    let mut encounter = Encounter::new(&mut run);
+    let mut encounter = Encounter::new(run);
     encounter.begin_turn();
 
     assert_eq!(encounter.player.health, 100);
@@ -47,7 +47,7 @@ fn tingsha_damages_enemies() {
     run.deck.push(CardInstance::new(Card::SilentDefend));
     run.relics.insert(Relics::Tingsha, 0);
 
-    let mut encounter = Encounter::new(&mut run);
+    let mut encounter = Encounter::new(run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
     let starting_health = encounter.enemies[0].health;
     
@@ -62,7 +62,7 @@ fn mercury_hourglass_damages_enemies() {
     let mut run = start_run();
     run.relics.insert(Relics::MercuryHourglass, 0);
 
-    let mut encounter = Encounter::new(&mut run);
+    let mut encounter = Encounter::new(run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
 
     let starting_health = encounter.enemies[0].health;
@@ -95,7 +95,7 @@ fn ornamental_fan_applies_block() {
     run.pickup_relic(Relics::OrnamentalFan);
     run.pickup_relic(Relics::RingOfTheSnake);
 
-    let mut encounter = Encounter::new(&mut run);
+    let mut encounter = Encounter::new(run);
     encounter.enemies.push(Enemy::new(Monsters::FuzzyWurmCrawler));
     encounter.enemies[0].health = 100;
 
@@ -126,9 +126,10 @@ fn ornamental_fan_ignores_skills() {
     run.deck.push(CardInstance::new(Card::SilentDefend));
     run.pickup_relic(Relics::OrnamentalFan);
 
-    let mut encounter = Encounter::new(&mut run);
+    let mut encounter = Encounter::new(run);
     encounter.begin_turn();
     encounter.play(get_card!(Card::SilentDefend, encounter.hand).unwrap().id, 0, vec![], &vec![]);
-
+    
+    let run = encounter.end();
     assert_eq!(run.relics[&Relics::OrnamentalFan], 0);
 }

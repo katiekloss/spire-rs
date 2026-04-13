@@ -20,8 +20,8 @@ impl Target for Player {
     }
 }
 
-impl<'a> Encounter<'a> {
-    pub fn new(run: &'a mut Run) -> Self {
+impl Encounter {
+    pub fn new(run: Run) -> Self {
         let cards = run.deck.clone();            
 
         Self {
@@ -432,6 +432,11 @@ impl<'a> Encounter<'a> {
             EnemyMoves::Custom(handler) => handler(self, enemy)
         }
     }
+
+    /// Ends the encounter, returning the run in its post-encounter state
+    pub fn end(self) -> Run {
+        self.run
+    }
 }
 
 impl Damageable for Player {
@@ -477,8 +482,8 @@ mod draw_tests {
 
     #[test]
     fn regular_draw() {
-        let mut run = start_run(6);
-        let mut encounter = Encounter::new(&mut run);
+        let run = start_run(6);
+        let mut encounter = Encounter::new(run);
         encounter.begin_turn();
 
         assert_eq!(1, encounter.draw_pile.len());
@@ -487,8 +492,8 @@ mod draw_tests {
 
     #[test]
     fn draw_with_shuffle() {
-        let mut run = start_run(6);
-        let mut encounter = Encounter::new(&mut run);
+        let run = start_run(6);
+        let mut encounter = Encounter::new(run);
         encounter.begin_turn();
         encounter.yield_turn();
         encounter.end_turn();

@@ -3,8 +3,9 @@ use crate::{Effect, EncounterOp, Run, cards::CardInstance, monsters::Enemy};
 pub mod encounter;
 pub mod run;
 
-pub struct Encounter<'a> {
-    pub run: &'a mut Run,
+#[derive(Clone, PartialEq, Hash)]
+pub struct Encounter {
+    pub run: Run,
     
     pub player: Player,
     pub draw_pile: Vec<CardInstance>,
@@ -18,9 +19,12 @@ pub struct Encounter<'a> {
     pub enemies: Vec<Enemy>,
 }
 
+#[derive(Clone, PartialEq, Hash)]
 pub struct Player {
     pub energy: u32,
     pub block: u32,
     pub health: u32,
     pub effects: Vec<Effect>
 }
+
+impl Eq for Encounter {}

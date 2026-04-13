@@ -96,7 +96,7 @@ pub enum Monsters {
     ShrinkerBeetle
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash)]
 pub enum Moves {
     Attack(u32),
     Buff(Effect),
@@ -112,12 +112,13 @@ pub struct MonsterData {
 
 type CustomMoveHandler = fn(&Encounter, &Enemy) -> Vec<EncounterOp>;
 
-#[derive(Clone)]
+#[derive(Clone, Hash)]
 pub enum EnemyMoves {
     Static(Vec<Vec<Moves>>),
     Custom(CustomMoveHandler)
 }
 
+#[derive(Clone, Hash)]
 pub struct Enemy {
     pub id: u32,
     pub monster: Monsters,
