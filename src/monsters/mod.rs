@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::RangeInclusive, sync::{LazyLock, Mutex}};
+use std::{collections::HashMap, fmt::Display, ops::RangeInclusive, sync::{LazyLock, Mutex}};
 
 use rand::RngExt;
 
@@ -84,7 +84,7 @@ static MONSTERS: LazyLock<HashMap<Monsters, MonsterData>> = LazyLock::new(|| {
     m
 });
 
-#[derive(Hash, PartialEq, Eq, Clone)]
+#[derive(Hash, PartialEq, Eq, Clone, Debug)]
 pub enum Monsters {
     FuzzyWurmCrawler,
     SmallLeafSlime,
@@ -112,13 +112,13 @@ pub struct MonsterData {
 
 type CustomMoveHandler = fn(&Encounter, &Enemy) -> Vec<EncounterOp>;
 
-#[derive(Clone, Hash)]
+#[derive(Clone, Hash, Debug)]
 pub enum EnemyMoves {
     Static(Vec<Vec<Moves>>),
     Custom(CustomMoveHandler)
 }
 
-#[derive(Clone, Hash)]
+#[derive(Clone, Hash, Debug)]
 pub struct Enemy {
     pub id: u32,
     pub monster: Monsters,
