@@ -1,30 +1,24 @@
-#![allow(static_mut_refs)]
-
-use core::panic;
-use std::{collections::HashMap, fmt::Display, sync::{LazyLock, Mutex}};
+use std::{collections::HashMap, fmt::Display, hash::Hash, sync::{LazyLock, Mutex}};
 
 use rand::{RngExt, rngs::ThreadRng};
 use spire_rs::{EncounterOp, Run, cards::{CardInstance, library::Card}, core::Encounter, monsters::{Enemy, Monsters}};
 
 static NODE_IDS: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(1));
-static mut NODE_STATS: LazyLock<HashMap<u32, NodeStats>> = LazyLock::new(|| HashMap::new());
 
-const EXPLORE_DECAY: f64 = 0.9999975;
+const EXPLORE_DECAY: f64 = 0.99975;
 
 static EXPLORE_RATE: Mutex<f64> = Mutex::new(1.);
+
+pub struct Search {
+    pub nodes: HashMap<u32, ActionNode>,
+    pub rng: ThreadRng,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
     PlaySelf(Card),
-    PlayAgainst(Card)
-}
-
-#[derive(Debug)]
-pub struct NodeStats {
-    pub parent: Option<u32>,
-    pub wins: u32,
-    pub evals: u32,
-    id: u32
+    PlayAgainst(Card),
+    NextTurn
 }
 
 #[derive(Clone, Debug)]
@@ -50,17 +44,19 @@ pub struct Position {
 #[derive(Clone)]
 pub struct ActionNode {
     pub id: u32,
-    pub down: Vec<ActionNode>,
+    pub up: Option<u32>,
+    pub down: Vec<u32>,
     pub encounter: Encounter,
     pub action: Option<Action>,
     pub expanded: bool,
     pub visited: bool,
-    pub evaluated: bool,
+    pub evals: u32,
+    pub wins: u32,
 }
 
 impl Display for ActionNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ActionNode").field("id", &self.id).field("action", &self.action).field("down", &self.down.len()).finish()
+        f.debug_struct("ActionNode").field("id", &self.id).field("action", &self.action).field("down", &self.down).field("wins", &self.wins).field("evals", &self.evals).finish()
     }
 }
 
@@ -88,111 +84,170 @@ fn start_encounter() -> Encounter {
 }
 
 fn main() -> std::io::Result<()> {
-    let mut rng = rand::rng();
     let mut encounter = start_encounter();
     encounter.begin_turn();
-    
-    let mut root_node = ActionNode {
-        id: 0,
-        down: vec![],
-        action: None,
-        encounter: encounter.clone(),
-        visited: false,
-        expanded: false,
-        evaluated: false
+
+    let mut search = Search {
+        nodes: HashMap::new(),
+        rng: rand::rng()
     };
 
-    unsafe { NODE_STATS.insert(root_node.id, NodeStats { id: root_node.id, parent: None, wins: 0, evals: 0 }) };
-    
-    visit(&mut rng, &mut root_node);
-    unsafe {
-        let mut nodes: Vec<&NodeStats> = NODE_STATS.values().collect();
-        nodes.sort_by(|a, b| b.evals.cmp(&a.evals));
-        println!("{:?}", &nodes[0..10]);
+    search.nodes.insert(0, ActionNode {
+        id: 0,
+        up: None,
+        down: vec![],
+        action: None,
+        encounter: encounter,
+        visited: false,
+        expanded: false,
+        wins: 0,
+        evals: 0
+    });
+
+    for i in 1..1_000 {
+        search.next(0);
+    }
+
+    let mut nodes: Vec<&mut ActionNode> = search.nodes.values_mut().collect();
+    nodes.sort_by(|a, b| b.evals.cmp(&a.evals));
+    for node in &nodes[0..10] {
+        println!("{}", **node);
     }
 
     Ok(())
 }
 
-pub fn expand(node: &mut ActionNode) {
-    let actions = get_all_actions(&node.encounter);
+impl Search {
 
-    let mut ids = NODE_IDS.lock().unwrap();
-    for action in actions {
-        let child = ActionNode { id: *ids, down: vec![], encounter: node.encounter.clone(), action: Some(action), visited: false, expanded: false, evaluated: false };
-        unsafe { NODE_STATS.insert(child.id, NodeStats { id: child.id, parent: Some(node.id), wins: 0, evals: 0 }); };
-        node.down.push(child);
-        *ids += 1;
-    }
+    pub fn expand(&mut self, id: u32) {
+        let node = self.nodes.get_mut(&id).unwrap();
+        let actions = get_all_actions(&node.encounter);
 
-    node.expanded = true;
-}
+        let mut ids = NODE_IDS.lock().unwrap();
+        let mut new = vec![];
+        for action in actions {
+            let mut child = ActionNode { id: *ids, up: Some(node.id), down: vec![], encounter: node.encounter.clone(), action: Some(action), visited: false, expanded: false, wins: 0, evals: 0 };
 
-pub fn visit(rng: &mut ThreadRng, mut node: &mut ActionNode) {
-    for i in 1..1000 {
-        node.visited = true;
+            match &child.action {
+                Some(Action::PlayAgainst(card)) => child.encounter.play(child.encounter.hand.iter().filter(|c| c.card == *card).nth(0).unwrap().id, child.encounter.enemies[0].id, vec![], &vec![]),
+                Some(Action::PlaySelf(card)) => child.encounter.play(child.encounter.hand.iter().filter(|c| c.card == *card).nth(0).unwrap().id, 0, vec![], &vec![]),
+                Some(Action::NextTurn) => {
+                    child.encounter.yield_turn();
 
-        if !node.expanded {
-            expand(node);
-        }
+                    if child.encounter.player.health == 0 || child.encounter.enemies[0].health == 0 {
+                        node.expanded = true;
+                        return;
+                    }
 
-        evaluate(rng, node);
-
-        if !node.visited {
-            node.visited = true;
-        }
-
-        println!("Visited {}", node);
-
-        let n = node.down.len();
-        node = {
-            let mut explore_rate = EXPLORE_RATE.lock().unwrap();
-            *explore_rate *= EXPLORE_DECAY; // but ELEGANCE
-
-            if rng.random_range(0. .. 1.) < *explore_rate {
-                &mut node.down[rng.random_range(0..n)]
-            } else {
-                unsafe { node.down.sort_by(|a, b| NODE_STATS[&b.id].wins.cmp(&NODE_STATS[&a.id].wins)); }
-                node.down.iter_mut().filter(|n| !n.expanded).nth(0).unwrap()
+                    child.encounter.end_turn();
+                    child.encounter.begin_turn();
+                }
+                None => unreachable!()
             }
-        };
-    }
-}
+            
+            node.down.push(child.id);
+            new.push(child);
+            *ids += 1;
+        }
 
-/// Applies the node's action to its state and then plays it out from there
-pub fn evaluate(rng: &mut ThreadRng, node: &mut ActionNode) {
-    match node.action {
-        Some(Action::PlayAgainst(card)) => node.encounter.play(node.encounter.hand.iter().filter(|c| c.card == card).nth(0).unwrap().id, node.encounter.enemies[0].id, vec![], &vec![]),
-        Some(Action::PlaySelf(card)) => node.encounter.play(node.encounter.hand.iter().filter(|c| c.card == card).nth(0).unwrap().id, 0, vec![], &vec![]),
-        None => return
-    }
+        node.expanded = true;
 
-    let position = get_position(&node.encounter);
-
-    let mut wins = 0;
-
-    for _ in 0..100 {
-        let child_encounter = node.encounter.clone();
-        if play_out(rng, child_encounter) {
-            wins += 1;
-        } else {
+        for node in new {
+            self.nodes.insert(node.id, node);
         }
     }
 
-    node.evaluated = true;
+    pub fn next(&mut self, mut id: u32) {
+        if !self.nodes[&id].expanded {
+            self.expand(id);
+        }
 
-    unsafe {
+        loop {
+            let node = &self.nodes[&id];
+            let next_collapsed = node.down.iter()
+                .filter(|n| {
+                    println!("Checking node {}", *n);
+                    let child = self.nodes.get(*n);
+                    return match child {
+                        Some(c) => !c.expanded,
+                        None => panic!()
+                    }})
+                .nth(0);
+            if next_collapsed.is_some() {
+                id = *next_collapsed.unwrap();
+                println!("Found new collapsed node {}", id);
+                break;
+            } else {
+
+                let n = node.down.len();
+                if n == 0 {
+                    println!("Found dead-end node");
+                    return;
+                }
+
+                id = {
+                    let mut explore_rate = EXPLORE_RATE.lock().unwrap();
+                    *explore_rate *= EXPLORE_DECAY;
+
+                    if self.rng.random_range(0. .. 1.) < *explore_rate {
+                        println!("Traveling to random child node");
+                        node.down[self.rng.random_range(0..n)]
+                    } else {
+                        println!("Trying to find next best candidate");
+                        let mut candidates: Vec<(u32, u32)> = node.down.clone()
+                            .iter()
+                            .filter(|n| !self.nodes[&n].expanded)
+                            .map(|n| (*n, self.nodes[&n].wins))
+                            .collect();
+
+                        // head back up to the root and try again
+                        if candidates.len() == 0 {
+                            println!("Exhausted children, trying again");
+                            return;
+                        }
+
+                        candidates.sort_by(|a, b| b.1.cmp(&a.1));
+                        candidates[0].0
+                    }
+                };
+            }
+        }
+
+        self.expand(id);
+        self.evaluate(id);
+
+        //println!("Visited {}", node);
+
+        
+    }
+
+    /// Applies the node's action to its state and then plays it out from there
+    pub fn evaluate(&mut self, id: u32) {
+        let node = self.nodes.get_mut(&id).unwrap();
+
+        let position = get_position(&node.encounter);
+        println!("Eval: {} {:?}", node, position);
+        let mut encounter = node.encounter.clone();
+
+        let mut wins = 0;
+
+        for _ in 0..100 {
+            let child_encounter = encounter.clone();
+            if play_out(&mut self.rng, child_encounter) {
+                wins += 1;
+            }
+        }
+
+        // backpropagate the results so that parent.wins = children.sum(|c| c.wins) for all ancestors
         let mut this = node.id;
         loop {
-            let root = NODE_STATS.get(&0).unwrap();
-            let stats = NODE_STATS.get_mut(&this).unwrap();
-
-            stats.evals += 1;
+            let node = self.nodes.get_mut(&this).unwrap();
+            node.evals += 1;
             if wins > 50 {
-                stats.wins += 1;
+                node.wins += 1;
             }
 
-            match stats.parent {
+            match node.up {
                 Some(parent) => this = parent,
                 None => break
             };
@@ -202,7 +257,7 @@ pub fn evaluate(rng: &mut ThreadRng, node: &mut ActionNode) {
 
 pub fn play_out(rng: &mut ThreadRng, mut encounter: Encounter) -> bool {
     loop {
-        if encounter.player.energy == 0 {
+        if encounter.player.energy == 0 || encounter.hand.len() == 0 {
             encounter.yield_turn();
 
             if encounter.player.health == 0 {
@@ -220,7 +275,19 @@ pub fn play_out(rng: &mut ThreadRng, mut encounter: Encounter) -> bool {
 
         match action {
             Action::PlayAgainst(card) => encounter.play(encounter.hand.iter().filter(|c| c.card == *card).nth(0).unwrap().id, encounter.enemies[0].id, vec![], &vec![]),
-            Action::PlaySelf(card) => encounter.play(encounter.hand.iter().filter(|c| c.card == *card).nth(0).unwrap().id, 0, vec![], &vec![])
+            Action::PlaySelf(card) => encounter.play(encounter.hand.iter().filter(|c| c.card == *card).nth(0).unwrap().id, 0, vec![], &vec![]),
+            Action::NextTurn => {
+                encounter.yield_turn();
+
+                if encounter.player.health == 0 {
+                    return false;
+                } else if encounter.enemies[0].health == 0 {
+                    return true;
+                }
+
+                encounter.end_turn();
+                encounter.begin_turn();
+            }
         };
 
         if encounter.player.health == 0 {
@@ -330,6 +397,7 @@ fn get_all_actions(encounter: &Encounter) -> Vec<Action> {
             Card::Survivor => Action::PlaySelf(card.card),
             _ => unreachable!()
         });
+        actions.push(Action::NextTurn);
     }
     
     actions
