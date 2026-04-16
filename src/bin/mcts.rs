@@ -1,18 +1,30 @@
-use std::{cell::{Cell, UnsafeCell}, collections::HashMap, sync::{LazyLock, Mutex, RwLock}};
+#![allow(static_mut_refs)]
+
+use core::panic;
+use std::{collections::HashMap, fmt::Display, sync::{LazyLock, Mutex}};
 
 use rand::{RngExt, rngs::ThreadRng};
 use spire_rs::{EncounterOp, Run, cards::{CardInstance, library::Card}, core::Encounter, monsters::{Enemy, Monsters}};
 
-const EXPLORE_DECAY: f64 = 0.99999975;
+static NODE_IDS: LazyLock<Mutex<u32>> = LazyLock::new(|| Mutex::new(1));
+static mut NODE_STATS: LazyLock<HashMap<u32, NodeStats>> = LazyLock::new(|| HashMap::new());
+
+const EXPLORE_DECAY: f64 = 0.9999975;
 
 static EXPLORE_RATE: Mutex<f64> = Mutex::new(1.);
-static MEMORY: LazyLock<Memory> = LazyLock::new(|| Memory { states: HashMap::new()});
 
-
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Action {
     PlaySelf(Card),
     PlayAgainst(Card)
+}
+
+#[derive(Debug)]
+pub struct NodeStats {
+    pub parent: Option<u32>,
+    pub wins: u32,
+    pub evals: u32,
+    id: u32
 }
 
 #[derive(Clone, Debug)]
@@ -25,6 +37,31 @@ pub enum Order {
 pub enum EvalResult {
     Success,
     Failure
+}
+
+#[derive(Hash, PartialEq, Eq, Debug, Clone)]
+pub struct Position {
+    pub turn: u32,
+    pub hand: Vec<Card>,
+    pub incoming_damage: u32,
+    pub block: u32
+}
+
+#[derive(Clone)]
+pub struct ActionNode {
+    pub id: u32,
+    pub down: Vec<ActionNode>,
+    pub encounter: Encounter,
+    pub action: Option<Action>,
+    pub expanded: bool,
+    pub visited: bool,
+    pub evaluated: bool,
+}
+
+impl Display for ActionNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ActionNode").field("id", &self.id).field("action", &self.action).field("down", &self.down.len()).finish()
+    }
 }
 
 fn start_encounter() -> Encounter {
@@ -52,83 +89,145 @@ fn start_encounter() -> Encounter {
 
 fn main() -> std::io::Result<()> {
     let mut rng = rand::rng();
+    let mut encounter = start_encounter();
+    encounter.begin_turn();
     
-    for i in 0..10 {
-        let mut encounter = start_encounter();
-        encounter.begin_turn();
-        evaluate(&mut rng, encounter);
-        
-        let mut rate = EXPLORE_RATE.lock().unwrap();
-        *rate = *rate * EXPLORE_DECAY;
+    let mut root_node = ActionNode {
+        id: 0,
+        down: vec![],
+        action: None,
+        encounter: encounter.clone(),
+        visited: false,
+        expanded: false,
+        evaluated: false
+    };
+
+    unsafe { NODE_STATS.insert(root_node.id, NodeStats { id: root_node.id, parent: None, wins: 0, evals: 0 }) };
+    
+    visit(&mut rng, &mut root_node);
+    unsafe {
+        let mut nodes: Vec<&NodeStats> = NODE_STATS.values().collect();
+        nodes.sort_by(|a, b| b.evals.cmp(&a.evals));
+        println!("{:?}", &nodes[0..10]);
     }
 
     Ok(())
 }
 
-pub fn evaluate(rng: &mut ThreadRng, mut encounter: Encounter) -> EvalResult {
-    let position = get_position(&encounter);
-    let actions = get_all_actions(&encounter);
+pub fn expand(node: &mut ActionNode) {
+    let actions = get_all_actions(&node.encounter);
 
-    // choose by epsilon greedy
-    let action = {
-        let explore_rate = EXPLORE_RATE.lock().unwrap();
+    let mut ids = NODE_IDS.lock().unwrap();
+    for action in actions {
+        let child = ActionNode { id: *ids, down: vec![], encounter: node.encounter.clone(), action: Some(action), visited: false, expanded: false, evaluated: false };
+        unsafe { NODE_STATS.insert(child.id, NodeStats { id: child.id, parent: Some(node.id), wins: 0, evals: 0 }); };
+        node.down.push(child);
+        *ids += 1;
+    }
 
-        if rng.random_range(0. .. 1.) < *explore_rate {
-            &actions[rng.random_range(0..actions.len())]
-        } else {
-            recall_by_closest_position(&position)
+    node.expanded = true;
+}
+
+pub fn visit(rng: &mut ThreadRng, mut node: &mut ActionNode) {
+    for i in 1..1000 {
+        node.visited = true;
+
+        if !node.expanded {
+            expand(node);
         }
-    };
+
+        evaluate(rng, node);
+
+        if !node.visited {
+            node.visited = true;
+        }
+
+        println!("Visited {}", node);
+
+        let n = node.down.len();
+        node = {
+            let mut explore_rate = EXPLORE_RATE.lock().unwrap();
+            *explore_rate *= EXPLORE_DECAY; // but ELEGANCE
+
+            if rng.random_range(0. .. 1.) < *explore_rate {
+                &mut node.down[rng.random_range(0..n)]
+            } else {
+                unsafe { node.down.sort_by(|a, b| NODE_STATS[&b.id].wins.cmp(&NODE_STATS[&a.id].wins)); }
+                node.down.iter_mut().filter(|n| !n.expanded).nth(0).unwrap()
+            }
+        };
+    }
+}
+
+/// Applies the node's action to its state and then plays it out from there
+pub fn evaluate(rng: &mut ThreadRng, node: &mut ActionNode) {
+    match node.action {
+        Some(Action::PlayAgainst(card)) => node.encounter.play(node.encounter.hand.iter().filter(|c| c.card == card).nth(0).unwrap().id, node.encounter.enemies[0].id, vec![], &vec![]),
+        Some(Action::PlaySelf(card)) => node.encounter.play(node.encounter.hand.iter().filter(|c| c.card == card).nth(0).unwrap().id, 0, vec![], &vec![]),
+        None => return
+    }
+
+    let position = get_position(&node.encounter);
 
     let mut wins = 0;
 
-    for _ in 0..10 {
-        let child_encounter = encounter.clone();
+    for _ in 0..100 {
+        let child_encounter = node.encounter.clone();
         if play_out(rng, child_encounter) {
-            println!("Won by {:?} from {:?}", action, position);
             wins += 1;
         } else {
-            println!("Lost by {:?} from {:?}", action, position);
         }
     }
 
-    return if wins > 5 {
-        println!("Taking {:?} from {:?} is successful", action, position);
-        EvalResult::Success
-    } else {
-        println!("Taking {:?} from {:?} is a failure", action, position);
-        EvalResult::Failure
+    node.evaluated = true;
+
+    unsafe {
+        let mut this = node.id;
+        loop {
+            let root = NODE_STATS.get(&0).unwrap();
+            let stats = NODE_STATS.get_mut(&this).unwrap();
+
+            stats.evals += 1;
+            if wins > 50 {
+                stats.wins += 1;
+            }
+
+            match stats.parent {
+                Some(parent) => this = parent,
+                None => break
+            };
+        }
     }
 }
 
 pub fn play_out(rng: &mut ThreadRng, mut encounter: Encounter) -> bool {
-    if encounter.player.energy == 0 {
-        encounter.yield_turn();
+    loop {
+        if encounter.player.energy == 0 {
+            encounter.yield_turn();
+
+            if encounter.player.health == 0 {
+                return false;
+            } else if encounter.enemies[0].health == 0 {
+                return true;
+            }
+
+            encounter.end_turn();
+            encounter.begin_turn();
+        }
+
+        let actions = get_all_actions(&encounter);
+        let action = &actions[rng.random_range(0..actions.len())];
+
+        match action {
+            Action::PlayAgainst(card) => encounter.play(encounter.hand.iter().filter(|c| c.card == *card).nth(0).unwrap().id, encounter.enemies[0].id, vec![], &vec![]),
+            Action::PlaySelf(card) => encounter.play(encounter.hand.iter().filter(|c| c.card == *card).nth(0).unwrap().id, 0, vec![], &vec![])
+        };
 
         if encounter.player.health == 0 {
             return false;
         } else if encounter.enemies[0].health == 0 {
             return true;
         }
-
-        encounter.end_turn();
-        encounter.begin_turn();
-    }
-
-    let actions = get_all_actions(&encounter);
-    let action = &actions[rng.random_range(0..actions.len())];
-
-    match action {
-        Action::PlayAgainst(card) => encounter.play(encounter.hand.iter().filter(|c| c.card == *card).nth(0).unwrap().id, encounter.enemies[0].id, vec![], &vec![]),
-        Action::PlaySelf(card) => encounter.play(encounter.hand.iter().filter(|c| c.card == *card).nth(0).unwrap().id, 0, vec![], &vec![])
-    };
-
-    return if encounter.player.health == 0 {
-        false
-    } else if encounter.enemies[0].health == 0 {
-        true
-    } else {
-        play_out(rng, encounter)
     }
 }
 
@@ -214,6 +313,7 @@ fn get_position(encounter: &Encounter) -> Position {
     };
 
     Position {
+        turn: encounter.turn,
         block: encounter.player.block,
         hand: encounter.hand.iter().map(|c| c.card).collect(),
         incoming_damage
@@ -233,19 +333,4 @@ fn get_all_actions(encounter: &Encounter) -> Vec<Action> {
     }
     
     actions
-}
-
-fn recall_by_closest_position(position: &Position) -> &Action {
-    &MEMORY.states.get(position).expect("Unknown position")
-}
-
-pub struct Memory {
-    pub states: HashMap<Position, Action>
-}
-
-#[derive(Hash, PartialEq, Eq, Debug)]
-pub struct Position {
-    pub hand: Vec<Card>,
-    pub incoming_damage: u32,
-    pub block: u32
 }
