@@ -71,6 +71,8 @@ impl Encounter {
             match effect {
                 Effect::Vulnerable(v) if v > 1 => effects.push(Effect::Vulnerable(v - 1)),
                 Effect::Vulnerable(_) => {},
+                Effect::Weak(w) if w > 1 => effects.push(Effect::Weak(w - 1)),
+                Effect::Weak(_) => {},
                 _ => effects.push(effect),
             }
         }
@@ -82,6 +84,8 @@ impl Encounter {
                 match effect {
                     Effect::Vulnerable(v) if v > 1 => effects.push(Effect::Vulnerable(v - 1)),
                     Effect::Vulnerable(_) => {},
+                    Effect::Weak(w) if w > 1 => effects.push(Effect::Weak(w - 1)),
+                    Effect::Weak(_) => {},
                     _ => effects.push(effect),
                 }
             }
@@ -424,7 +428,9 @@ impl Encounter {
                             Moves::Attack(dmg) => {
                                 EncounterOp::AttackPlayer(enemy.id, Self::query_attack_damage(enemy, &self.player, *dmg))
                             },
-                            _ => EncounterOp::Play(crate::cards::library::Card::Acrobatics)
+                            Moves::Buff(fx) => EncounterOp::ApplyTarget(enemy.id, *fx),
+                            Moves::Debuff(fx) => EncounterOp::ApplySelf(*fx),
+                            Moves::StatusCard(c) => EncounterOp::Materialize(*c)
                         }
                     })
                     .collect()
@@ -434,7 +440,8 @@ impl Encounter {
     }
 
     /// Ends the encounter, returning the run in its post-encounter state
-    pub fn end(self) -> Run {
+    pub fn end(mut self) -> Run {
+        self.run.health = self.player.health;
         self.run
     }
 }
