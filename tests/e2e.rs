@@ -42,6 +42,9 @@ fn hello_world() {
         assert_eq!(encounter.player.block, 5);
 
         encounter.yield_turn();
+        assert_eq!(encounter.player.block, 1);
+        assert_eq!(encounter.player.health, 70);
+
         encounter.end_turn();
     }
 
@@ -63,9 +66,6 @@ fn hello_world() {
         assert_eq!(encounter.player.energy, 1);
 
         encounter.yield_turn();
-        assert_eq!(encounter.player.block, 1);
-        assert_eq!(encounter.player.health, 70);
-
         encounter.end_turn();
     }
 
