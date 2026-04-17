@@ -360,7 +360,7 @@ impl Encounter {
         }
     }
 
-    fn query_attack_damage<TS: Effectable, TT: Effectable>(source: &TS, target: &TT, base_damage: u32) -> u32 {
+    pub fn query_attack_damage<TS: Effectable, TT: Effectable>(source: &TS, target: &TT, base_damage: u32) -> u32 {
         let mut total_damage = base_damage;
         for effect in source.get_effects() {
             match effect {

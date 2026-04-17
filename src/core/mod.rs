@@ -19,7 +19,7 @@ pub struct Encounter {
     pub enemies: Vec<Enemy>,
 }
 
-#[derive(Clone, PartialEq, Hash)]
+#[derive(Clone, PartialEq, Hash, Debug)]
 pub struct Player {
     pub energy: u32,
     pub block: u32,
