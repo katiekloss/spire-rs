@@ -11,6 +11,7 @@ pub mod monsters;
 pub mod core;
 pub mod map;
 pub mod powers;
+pub mod mcts;
 
 #[derive(Clone, PartialEq)]
 pub struct Run {

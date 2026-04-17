@@ -1,6 +1,12 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs::File, io::Write};
 
-use spire_rs::{Run, cards::{CardInstance, library::Card}, core::Encounter, mcts::{self, ActionNode, Search}, monsters::{Enemy, Monsters}};
+use spire_rs::{Run, cards::{CardInstance, library::Card}, core::Encounter, mcts::{Action, ActionNode, Search}, monsters::{Enemy, Monsters}};
+use graphviz_rust::dot_generator::*;
+use graphviz_rust::dot_structures::*;
+use graphviz_rust::{
+    cmd::Format,
+    exec, printer::PrinterContext,
+};
 
 fn start_encounter() -> Encounter {
     let mut run = Run {
@@ -46,6 +52,29 @@ fn main() -> std::io::Result<()> {
 
     for _ in 1..10_000 {
         search.next(0);
+    }
+
+    let mut graph = graph!(di id!("mcts"));
+    graph.add_stmt(Stmt::GAttribute(graphviz_rust::dot_structures::GraphAttributes::Graph(vec![Attribute {0: id!("rankdir"), 1: id!("LR")}])));
+    for node in search.nodes.values() {
+        let mut node_g = node!(node.id.to_string());
+        let text = match node.action {
+            Some(Action::PlayAgainst(card)) | Some(Action::PlaySelf(card)) => format!("{:?}", card),
+            Some(Action::NextTurn) => "yield".to_string(),
+            None => "".to_string()
+        };
+
+        let text = format!("{} {}/{}", text, node.wins, node.evals);
+
+        node_g.attributes.push(Attribute {0: id!("label"), 1: Id::Escaped(format!("\"{}\"", text))});
+        graph.add_stmt(Stmt::Node(node_g));
+        for down in &node.down {
+            graph.add_stmt(Stmt::Edge(edge!(node_id!(node.id.to_string()) => node_id!(down.to_string()))));
+        }
+    }
+
+    {
+        File::create("mcts.svg")?.write_all(&exec(graph, &mut PrinterContext::default(), vec![Format::Svg.into()])?)?;
     }
 
     let mut uct = HashMap::new();
