@@ -1,10 +1,10 @@
-use std::{collections::HashMap, fmt::Display, sync::{LazyLock, Mutex}};
+use std::{collections::HashMap, fmt::Display};
 
 use rand::{RngExt, rngs::ThreadRng};
 
 use crate::{EncounterOp, cards::library::Card, core::Encounter};
 
-const EXPLORE_DECAY: f64 = 0.99975;
+const EXPLORE_DECAY: f64 = 0.999975;
 
 pub struct Search {
     pub nodes: HashMap<u32, ActionNode>,
@@ -52,6 +52,7 @@ pub struct ActionNode {
     pub visited: bool,
     pub evals: u32,
     pub wins: u32,
+    pub uct: f32,
 }
 
 impl Display for ActionNode {
@@ -76,7 +77,7 @@ impl Search {
 
         let mut new = vec![];
         for action in actions {
-            let mut child = ActionNode { id: self.last_node_id + 1, up: Some(node.id), down: vec![], position: Self::get_position(&node.encounter), encounter: node.encounter.clone(), action: Some(action), visited: false, expanded: false, wins: 0, evals: 0, };
+            let mut child = ActionNode { id: self.last_node_id + 1, up: Some(node.id), down: vec![], position: Self::get_position(&node.encounter), encounter: node.encounter.clone(), action: Some(action), visited: false, expanded: false, wins: 0, evals: 0, uct: 0. };
 
             match &child.action {
                 Some(Action::PlayAgainst(card)) => child.encounter.play(child.encounter.hand.iter().filter(|c| c.card == *card).nth(0).unwrap().id, child.encounter.enemies[0].id, vec![], &vec![]),
@@ -176,7 +177,7 @@ impl Search {
     fn evaluate(&mut self, id: u32) {
         let node = self.nodes.get_mut(&id).unwrap();
 
-        let position = Self::get_position(&node.encounter);
+        //let position = Self::get_position(&node.encounter);
         //println!("Eval: {} {:?}", node, position);
 
         let win = {
@@ -186,17 +187,26 @@ impl Search {
 
         // backpropagate the results so that parent.wins = children.sum(|c| c.wins) holds for all ancestors
         let mut this = node.id;
+        let mut uct: HashMap<u32, f32> = HashMap::new();
         loop {
-            let node = self.nodes.get_mut(&this).unwrap();
-            node.evals += 1;
-            if win {
-                node.wins += 1;
+            {
+                let node = self.nodes.get_mut(&this).unwrap();
+                node.evals += 1;
+                if win {
+                    node.wins += 1;
+                }
             }
+            let node = self.nodes.get(&this).unwrap();
+            uct.insert(node.id, (node.wins as f32 / node.evals as f32) + f32::sqrt(2.) * f32::sqrt((if node.up.is_some() { self.nodes[&node.up.unwrap()].evals } else { node.evals } as f32).ln() / node.evals as f32));
 
             match node.up {
                 Some(parent) => this = parent,
                 None => break
             };
+        }
+
+        for node in uct {
+            self.nodes.get_mut(&node.0).unwrap().uct = node.1;
         }
     }
     
@@ -244,9 +254,9 @@ impl Search {
     }
     
     pub fn get_position(encounter: &Encounter) -> Position {
-        let incoming_damage = match encounter.get_enemy_intent(&encounter.enemies[0])[0] {
-            EncounterOp::AttackPlayer(_, dmg) => Encounter::query_attack_damage(&encounter.enemies[0], &encounter.player, dmg),
-            EncounterOp::Damage(_, dmg) => dmg,
+        let incoming_damage = match encounter.get_enemy_intent(&encounter.enemies[0])[..] {
+            [EncounterOp::AttackPlayer(_, dmg)] => Encounter::query_attack_damage(&encounter.enemies[0], &encounter.player, dmg),
+            [EncounterOp::Damage(_, dmg)] => dmg,
             _ => 0
         };
 
@@ -267,7 +277,8 @@ impl Search {
                     Card::SilentDefend => Action::PlaySelf(card.card),
                     Card::Neutralize => Action::PlayAgainst(card.card),
                     Card::Survivor => Action::PlaySelf(card.card),
-                    _ => unreachable!()
+                    Card::Slimed => continue,
+                    card => panic!("{:?}", card)
                 });
             }
         }

@@ -48,9 +48,10 @@ fn main() -> std::io::Result<()> {
         expanded: false,
         wins: 0,
         evals: 0,
+        uct: 0.
     });
 
-    for _ in 1..10_000 {
+    for _ in 1..100_000 {
         search.next(0);
     }
 
@@ -64,7 +65,7 @@ fn main() -> std::io::Result<()> {
             None => "".to_string()
         };
 
-        let text = format!("{} {}/{}", text, node.wins, node.evals);
+        let text = format!("{} {}/{} ({})", text, node.wins, node.evals, node.uct);
 
         node_g.attributes.push(Attribute {0: id!("label"), 1: Id::Escaped(format!("\"{}\"", text))});
         graph.add_stmt(Stmt::Node(node_g));
@@ -77,17 +78,10 @@ fn main() -> std::io::Result<()> {
         File::create("mcts.svg")?.write_all(&exec(graph, &mut PrinterContext::default(), vec![Format::Svg.into()])?)?;
     }
 
-    let mut uct = HashMap::new();
-    for node in search.nodes.values() {
-        uct.insert(node.id, (node.wins as f32 / node.evals as f32) + f32::sqrt(2.) * f32::sqrt((if node.up.is_some() { search.nodes[&node.up.unwrap()].evals } else { node.evals } as f32).ln() / node.evals as f32));
+    let mut immediate_children: Vec<(u32, f32)> = search.nodes[&0].down.iter().map(|n| (*n, search.nodes[&n].uct)).collect();
+    immediate_children.sort_by(|a, b| b.1.total_cmp(&a.1));
+    for node in immediate_children {
+        println!("{}", search.nodes[&node.0]);
     }
-
-    let mut ordered: Vec<(&u32, &f32)> = uct.iter().collect();
-    ordered.sort_by(|a, b| b.1.total_cmp(a.1));
-
-    for node in &ordered[0..10] {
-        println!("{}: {}", node.1, search.nodes[&node.0]);
-    }
-
     Ok(())
 }
