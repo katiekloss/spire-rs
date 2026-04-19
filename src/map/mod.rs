@@ -3,13 +3,13 @@ use rand::{RngExt, distr::Uniform, rngs::ThreadRng};
 
 use crate::{monsters::Monsters, relics::Relics};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct MapRoom {
     pub t: RoomType,
     pub up_nodes: Vec<MapRoom>
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum RoomType {
     Ancient(Ancients),
     Encounter(Vec<Monsters>, u32),
@@ -18,7 +18,7 @@ pub enum RoomType {
     Rest
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Ancients {
     Neow
 }
