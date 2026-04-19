@@ -1,9 +1,10 @@
 #![feature(hash_map_macro)]
 
-use std::hash_map;
+use core::panic;
+use std::{fs::{File, OpenOptions}, hash_map, sync::{LazyLock, Mutex}};
 
 use log::{debug, info, trace};
-use spire_rs::{EncounterOp, Run, cards::{CardInstance, CardType, library::{CARDS, Card}}, core::Encounter, get_card, map::{MapGenerator, MapRoom, RoomType}, monsters::Enemy, relics::Relics};
+use spire_rs::{Run, cards::{CardInstance, CardType, library::{CARDS, Card}}, core::Encounter, get_card, map::{MapGenerator, MapRoom, RoomType}, mcts::{Action, ActionNode, Search}, monsters::Enemy, relics::Relics};
 use std_logger::Config;
 
 fn main() {
@@ -11,7 +12,7 @@ fn main() {
 
     let mut run = Run {
         floor: 0,
-        relics: hash_map! {Relics::RingOfTheSnake => 0, Relics::Anchor => 0},
+        relics: hash_map! {Relics::RingOfTheSnake => 0},
         health: 70,
         max_health: 70,
         gold: 99,
@@ -23,19 +24,18 @@ fn main() {
         run.deck.push(CardInstance::new(Card::SilentDefend));
     }
     run.deck.push(CardInstance::new(Card::Survivor));
-    run.deck.push(CardInstance::new(Card::Neutralize));
 
-    for card in [Card::CloakAndDagger, Card::BladeDance, Card::Ricochet, Card::DaggerSpray] {
+    for card in [Card::Neutralize] {
         let mut samples = vec![];
         info!("Running simulations for {:?}", card);
 
-        for i in 1..100_000 {
+        for i in 1..100 {
             let mut run = run.clone();
             run.deck.push(CardInstance::new(card));
 
             debug!("Starting simulation {i}");
             let run = run_simulation(run, &MapGenerator::generate());
-            debug!("Simulation {i} ended on floor {} with {} HP", run.floor, run.health);
+            info!("Simulation {i} ended on floor {} with {} HP", run.floor, run.health);
             samples.push(run);
         }
 
@@ -54,7 +54,7 @@ fn run_simulation(mut run: Run, starting_room: &MapRoom) -> Run {
     while run.health > 0 && let Some(room) = next_room {
         run.floor += 1;
         
-        debug!("Moving to floor {}", run.floor);
+        debug!("Moving to floor {}: {:?}", run.floor, room.t);
 
         match &room.t {
             RoomType::Encounter(monsters, gold) | RoomType::Elite(monsters, gold) => {
@@ -73,9 +73,12 @@ fn run_simulation(mut run: Run, starting_room: &MapRoom) -> Run {
             }
             RoomType::Treasure(_relic, gold) => {
                 run.gold += gold;
+                info!("Gained {} gold", gold);
             }
             RoomType::Rest => {
-                run.health += 15;
+                let before = run.health;
+                run.health = std::cmp::min(run.max_health, run.health + 15);
+                info!("Healed {} HP", run.health - before);
             }
         };
 
@@ -87,32 +90,73 @@ fn run_simulation(mut run: Run, starting_room: &MapRoom) -> Run {
 
 fn run_encounter(mut encounter: Encounter) -> Run {
 
+    // turn loop
     loop {
         encounter.begin_turn();
         let health = encounter.player.health;
         debug!("Starting turn {}", encounter.turn);
         debug!("Drew: {:?}", encounter.hand);
 
-        let next_enemy = encounter.enemies.iter().filter(|e| e.health > 0).nth(0);
-        if let None = next_enemy {
-            return encounter.end();
-        }
-        let next_enemy = next_enemy.unwrap();
-        let attack_damage = {
-            let mut d = 0;
-            for i in encounter.get_enemy_intent(next_enemy) {
-                if let EncounterOp::AttackPlayer(_, dmg) = i {
-                    d += dmg;
-                }
-            }
-            d
-        };
+        // card loop
+        loop {
 
-        if attack_damage > 0 {
-            respond_to_attack(&mut encounter, attack_damage);
-        } else {
-            general_response(&mut encounter);
-        };
+            let next_enemy = encounter.enemies.iter().filter(|e| e.health > 0).nth(0);
+            if let None = next_enemy {
+                return encounter.end();
+            }
+
+            let next_enemy = next_enemy.unwrap();
+
+            let mut mcts = Search::new();
+            mcts.nodes.insert(0, ActionNode {
+                id: 0,
+                up: None,
+                down: vec![],
+                encounter: encounter.clone(),
+                position: Search::get_position(&encounter),
+                action: None,
+                expanded: false,
+                visited: false,
+                evals: 0,
+                wins: 0,
+                uct: 0.
+            });
+
+            for i in 0..10_000 {
+                mcts.next(0);
+            }
+
+            let mut immediate_children: Vec<(u32, f32)> = mcts.nodes[&0].down.iter().map(|n| (*n, mcts.nodes[&n].uct)).collect();
+            immediate_children.sort_by(|a, b| b.1.total_cmp(&a.1));
+
+            if immediate_children.len() == 0 {
+                break
+            }
+
+            let best = immediate_children[0].0;
+
+            match mcts.nodes[&best].action {
+                Some(Action::PlaySelf(card)) => encounter.play(encounter.hand.iter().filter(|c| c.card == card).nth(0).unwrap().id, 0, vec![], &vec![]),
+                Some(Action::PlayAgainst(card)) => encounter.play(encounter.hand.iter().filter(|c| c.card == card).nth(0).unwrap().id, next_enemy.id, vec![], &vec![]),
+                Some(Action::NextTurn) => break,
+                None => panic!("{}", mcts.nodes[&best])
+            }
+        }
+        // let attack_damage = {
+        //     let mut d = 0;
+        //     for i in encounter.get_enemy_intent(next_enemy) {
+        //         if let EncounterOp::AttackPlayer(_, dmg) = i {
+        //             d += dmg;
+        //         }
+        //     }
+        //     d
+        // };
+
+        // if attack_damage > 0 {
+        //     respond_to_attack(&mut encounter, attack_damage);
+        // } else {
+        //     general_response(&mut encounter);
+        // };
 
         encounter.yield_turn();
         encounter.end_turn();
@@ -129,6 +173,10 @@ fn respond_to_attack(encounter: &mut Encounter, damage: u32) {
     trace!("Need to block {} damage", damage);
 
     while encounter.player.energy > 0 && encounter.player.block < damage && encounter.hand.len() > 0 {
+        if encounter.enemies.iter().map(|e| e.health).sum::<u32>() == 0 {
+            break;
+        }
+
         if let Some(survivor) = get_card!(Card::Survivor, encounter.hand) {
 
             let mut best_discard;
@@ -144,13 +192,16 @@ fn respond_to_attack(encounter: &mut Encounter, damage: u32) {
 
             if let Some(to_discard) = best_discard.first() {
                 debug!("Playing Survivor and discarding {:?}", to_discard);
+                trace(&encounter, &survivor.card, Some(&to_discard.card), None);
                 encounter.play(survivor.id, 0, vec![to_discard.id], &mut vec![]);
             } else {
                 debug!("Playing Survivor without discarding");
+                trace(&encounter, &survivor.card, None, None);
                 encounter.play(survivor.id, 0, vec![], &mut vec![]);
             }
         } else if let Some(defend) = get_card!(Card::SilentDefend, encounter.hand) {
             debug!("Playing a Defend");
+            trace(&encounter, &defend.card, None, None);
             encounter.play(defend.id, 0, vec![], &mut vec![]);
         } else {
             break;
@@ -170,6 +221,7 @@ fn general_response(encounter: &mut Encounter) {
         let blade_dance = get_card!(Card::BladeDance, encounter.hand);
         if let Some(card) = blade_dance {
             debug!("Playing {:?}", card);
+            trace(&encounter, &card.card, None, None);
             encounter.play(card.id, 0, vec![], &vec![]);
             continue;
         }
@@ -177,8 +229,48 @@ fn general_response(encounter: &mut Encounter) {
         encounter.hand.sort_by(|c1, c2| c1.cost.cmp(&c2.cost));
         debug!("Playing {:?}", encounter.hand[0].card);
         match &CARDS[&encounter.hand[0].card].typ {
-            CardType::Attack => encounter.play(encounter.hand[0].id, enemy.unwrap().id, vec![], &vec![]),
-            _ => encounter.play(encounter.hand[0].id, 0, vec![], &vec![]),
+            CardType::Attack => {
+                trace(&encounter, &encounter.hand[0].card, None, Some(enemy.unwrap()));
+                encounter.play(encounter.hand[0].id, enemy.unwrap().id, vec![], &vec![]);
+            },
+            _ => {
+                trace(&encounter, &encounter.hand[0].card, None, None);
+                encounter.play(encounter.hand[0].id, 0, vec![], &vec![]);
+            }
         };
     }
 }
+
+static LOG_FILE: LazyLock<Mutex<File>> = LazyLock::new(|| Mutex::new(OpenOptions::new()
+        .create(true)
+        .append(true)
+        .write(true)
+        .open("trace.log")
+        .unwrap()));
+
+
+fn trace(encounter: &Encounter, card: &Card, other_card: Option<&Card>, enemy: Option<&Enemy>) {
+}
+//     let mut file = LOG_FILE.lock().unwrap();
+//     let attack_damage;
+//     if let [EncounterOp::AttackPlayer(_, dmg)] = encounter.get_enemy_intent(&encounter.enemies[0])[..] {
+//         attack_damage = dmg;
+//     } else {
+//         attack_damage = 0;
+//     }
+
+//     let line = vec![
+//         *card as u32,
+//         encounter.hand.iter().filter(|c| c.card == Card::SilentDefend).count().try_into().unwrap(),
+//         encounter.hand.iter().filter(|c| c.card == Card::SilentStrike).count().try_into().unwrap(),
+//         encounter.hand.iter().filter(|c| c.card == Card::Neutralize).count().try_into().unwrap(),
+//         encounter.hand.iter().filter(|c| c.card == Card::Survivor).count().try_into().unwrap(),
+//         encounter.player.energy,
+//         encounter.player.block,
+//         encounter.enemies[0].health,
+//         attack_damage
+//     ]
+//     .into_iter().join(",");
+
+//     file.write(format!("{}\n", line).as_bytes()).expect("idk");
+// }
