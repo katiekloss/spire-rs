@@ -1,10 +1,11 @@
 use std::{collections::HashMap, fmt::Display};
 
+use log::trace;
 use rand::{RngExt, rngs::ThreadRng};
 
 use crate::{EncounterOp, cards::library::Card, core::Encounter};
 
-const EXPLORE_DECAY: f64 = 0.999975;
+const EXPLORE_DECAY: f64 = 0.9999975;
 
 pub struct Search {
     pub nodes: HashMap<u32, ActionNode>,
@@ -91,7 +92,7 @@ impl Search {
                 Some(Action::NextTurn) => {
                     child.encounter.yield_turn();
 
-                    if child.encounter.player.health == 0 || child.encounter.enemies[0].health == 0 {
+                    if child.encounter.player.health <= 0 || child.encounter.enemies.iter().map(|e| e.health).sum::<u32>() <= 0 {
                         continue;
                     }
 
@@ -131,13 +132,13 @@ impl Search {
                 .nth(0);
             if next_collapsed.is_some() {
                 id = *next_collapsed.unwrap();
-                //println!("Found new collapsed node {}", id);
+                trace!("Found new collapsed node {}", id);
                 break;
             } else {
 
                 let n = node.down.len();
                 if n == 0 {
-                    //println!("Found dead-end node");
+                    trace!("Found dead-end node");
                     return;
                 }
 
@@ -145,25 +146,25 @@ impl Search {
                     self.explore_rate *= EXPLORE_DECAY;
 
                     if self.rng.random_range(0. .. 1.) < self.explore_rate {
-                        //println!("Traveling to random child node");
+                        trace!("Traveling to random child node");
                         node.down[self.rng.random_range(0..n)]
                     } else {
-                        //println!("Trying to find next best candidate");
+                        trace!("Trying to find next best candidate");
 
                         // find the next collapsed node with the most wins
-                        let mut candidates: Vec<(u32, u32)> = node.down.clone()
+                        let mut candidates: Vec<(u32, f32)> = node.down.clone()
                             .iter()
                             .filter(|n| !self.nodes[&n].expanded)
-                            .map(|n| (*n, self.nodes[&n].wins))
+                            .map(|n| (*n, self.nodes[&n].uct))
                             .collect();
 
                         // head back up to the root and try again
                         if candidates.len() == 0 {
-                            //println!("Exhausted children, trying again");
+                            trace!("Exhausted children, trying again");
                             return;
                         }
 
-                        candidates.sort_by(|a, b| b.1.cmp(&a.1));
+                        candidates.sort_by(|a, b| b.1.total_cmp(&a.1));
                         candidates[0].0
                     }
                 };
@@ -215,9 +216,9 @@ impl Search {
             if encounter.player.energy == 0 || encounter.hand.len() == 0 {
                 encounter.yield_turn();
 
-                if encounter.player.health == 0 {
+                if encounter.player.health <= 0 {
                     return false;
-                } else if encounter.enemies[0].health == 0 {
+                } else if encounter.enemies.iter().map(|e| e.health).sum::<u32>() <= 0 {
                     return true;
                 }
 
@@ -234,9 +235,9 @@ impl Search {
                 Action::NextTurn => {
                     encounter.yield_turn();
 
-                    if encounter.player.health == 0 {
+                    if encounter.player.health <= 0 {
                         return false;
-                    } else if encounter.enemies[0].health == 0 {
+                    } else if encounter.enemies.iter().map(|e| e.health).sum::<u32>() <= 0 {
                         return true;
                     }
 
@@ -245,9 +246,9 @@ impl Search {
                 }
             };
 
-            if encounter.player.health == 0 {
+            if encounter.player.health <= 0 {
                 return false;
-            } else if encounter.enemies[0].health == 0 {
+            } else if encounter.enemies.iter().map(|e| e.health).sum::<u32>() <= 0 {
                 return true;
             }
         }
@@ -277,7 +278,8 @@ impl Search {
                     Card::SilentDefend => Action::PlaySelf(card.card),
                     Card::Neutralize => Action::PlayAgainst(card.card),
                     Card::Survivor => Action::PlaySelf(card.card),
-                    Card::Slimed => continue,
+                    Card::DaggerSpray => Action::PlaySelf(card.card),
+                    Card::Slimed => Action::PlaySelf(card.card),
                     card => panic!("{:?}", card)
                 });
             }
